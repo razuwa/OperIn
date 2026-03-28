@@ -66,13 +66,17 @@ $products = $_SESSION['products'];
     </div>
 
     <!-- PRODUK -->
+
+    <!-- NAVBAR -->
     <div id="produk" class="flex flex-col min-h-screen bg-amber-50">
         <div class="flex items-center text-white font-semibold px-30 p-3 bg-sky-600 min-w-full border-b-1 border-t-1 border-white">
             Welcome To Operin: Platform Preloved Mahasiswa
         </div>
+
         <!-- LOGO -->
-        <div class="flex items-center px-30 pt-4 pb-4 bg-sky-600 min-w-full text-white font-bold text-4xl shadow-lg ">
+        <div class="flex items-center px-30 pt-4 pb-4 bg-sky-600 min-w-full text-white font-bold text-3xl shadow-lg ">
             <img src="assets/logo-operin.png" alt="Logo Operin" class="max-h-8 pr-2"> Operin
+
             <!-- SEARCH BAR -->
             <form class="flex">
                 <input type="text" name="search" id="search" placeholder="Cari Barang..." 
@@ -81,6 +85,7 @@ $products = $_SESSION['products'];
                     <img src="assets/search.svg" alt="" class="max-h-6">
                 </button>
             </form>
+
             <!-- 3 PRINTILAN -->
             <div class="flex ml-30 gap-5">
                 <a href="">
@@ -103,10 +108,10 @@ $products = $_SESSION['products'];
 
         <!-- KATEGORI-KATEGORI -->
         <div class="flex justify-center gap-8 border-b-2 border-amber-300 shadow-lg p-4">
-            <a href="">lorem</a>
-            <a href="">lorem</a>
-            <a href="">lorem</a>
-            <a href="">lorem</a>
+            <a href="" class="text-gray-600 hover:text-orange-500 transition-colors">Kategori</a>
+            <a href="" class="text-gray-600 hover:text-orange-500 transition-colors">Urutkan</a>
+            <a href="" class="text-gray-600 hover:text-orange-500 transition-colors">Filter</a>
+            <a href="" class="text-gray-600 hover:text-orange-500 transition-colors">Promo</a>
         </div>
 
 
