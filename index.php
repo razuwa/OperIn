@@ -25,7 +25,7 @@ $products = $_SESSION['products'];
 </head>
 <body>
     <!-- LANDING PAGE -->
-    <div id="landingPage"class="h-screen bg-sky-600 flex flex-col items-center pt-20 " >
+    <div id="landingPage"class="h-screen bg-sky-600 flex flex-col items-center pt-20 border-b-1 border-white" >
         <!-- LOGO -->
         <a href="reset.php">
             <div class="flex items-center bg-sky-500 text-white text-2xl font-bold px-8 py-2 rounded-full shadow-lg transition-all hover:bg-sky-700 hover:scale-105">
@@ -69,7 +69,7 @@ $products = $_SESSION['products'];
 
     <!-- NAVBAR -->
     <div id="produk" class="flex flex-col min-h-screen bg-amber-50">
-        <div class="flex items-center text-white font-semibold px-30 p-3 bg-sky-600 min-w-full border-b-1 border-t-1 border-white">
+        <div class="flex items-center text-white font-semibold px-30 p-3 bg-sky-600 min-w-full border-b-1 border-white">
             Welcome To Operin: Platform Preloved Mahasiswa
         </div>
 
