@@ -51,14 +51,14 @@ $p = $products[$id];
             <!-- INFO PRODUK -->
             <div class="flex flex-col justify-between flex-1">
                 <div>
-                    <!-- <span class="bg-orange-50 text-orange-500 border border-orange-200 px-3 py-1 rounded-full text-xs font-medium">
-                        <?= $p['kondisi'] ?>
-                    </span> -->
                     <h1 class="text-2xl font-bold text-gray-800 mt-3 mb-2"><?= $p['name'] ?></h1>
                     <p class="text-3xl font-bold text-orange-500 mb-4">
                         Rp<?= number_format($p['price'], 0, ',', '.') ?>
                     </p>
-                    <div class="flex items-center gap-2 text-sm text-gray-500">
+                    <div class="flex items-center mb-2 gap-2 text-sm text-gray-500">
+                        <span class="bg-orange-50 text-orange-500 border border-orange-200 px-2 py-0.5 rounded text-[11px] font-semibold">
+                            <?=$p['kondisi']?>
+                        </span>
                         <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>

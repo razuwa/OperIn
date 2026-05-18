@@ -59,6 +59,9 @@ $products = $_SESSION['products'];
                                 </p>
                                 <div class="flex justify-between text-xs">
                                     <span class="text-gray-400 text-[15px]"><?= $p['fakultas'] ?></span>
+                                    <span class="bg-orange-50 text-orange-500 border border-orange-200 px-2 py-0.5 rounded text-[11px] font-semibold">
+                                        <?=$p['kondisi']?>
+                                    </span>
                                 </div>
                             </div>
                         </div>
@@ -93,6 +96,9 @@ $products = $_SESSION['products'];
                                 </p>
                                 <div class="flex justify-between text-xs">
                                     <span class="text-gray-400 text-[15px]"><?= $p['fakultas'] ?></span>
+                                    <span class="bg-orange-50 text-orange-500 border border-orange-200 px-2 py-0.5 rounded text-[11px] font-semibold">
+                                        <?=$p['kondisi']?>
+                                    </span>
                                 </div>
                             </div>
                         </div>
