@@ -6,7 +6,8 @@ require 'require/koneksi.php'; // 1. Hubungkan ke database menggunakan $koneksi
 $query = "SELECT p.*, f.nama_fakultas AS fakultas 
           FROM products p 
           JOIN faculties f ON p.faculty_id = f.id 
-          ORDER BY p.id DESC";
+          ORDER BY p.id DESC
+          LIMIT 10";
 $result = mysqli_query($koneksi, $query);
 
 $products = [];
