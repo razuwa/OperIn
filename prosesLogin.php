@@ -13,19 +13,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($result && mysqli_num_rows($result) === 1) {
         $user = mysqli_fetch_assoc($result);
 
-        // Verifikasi password (menggunakan password_verify karena data di-hash saat register)
+        // verifikasi password
         if (password_verify($password, $user['password'])) {
             
-            // Hapus session email lama karena login sudah berhasil
             unset($_SESSION['old_login_email']);
 
-            // 1. SIMPAN SESI UTAMA (Termasuk user_id untuk keperluan upload produk)
+            // simpan sesi
             $_SESSION['user_id']      = $user['id'];
             $_SESSION['user_name']    = $user['nama'];
             $_SESSION['role']         = $user['role']; // Berisi 'mahasiswa' atau 'admin'
             $_SESSION['is_logged_in'] = true;
 
-            // 2. PEMBEDA ROLE: Menentukan arah halaman redirect
+            // role
             if ($user['role'] === 'admin') {
                 $redirect_url = "dashboardAdmin.php";
                 $pesan_redirect = "Mengalihkan Anda ke Dashboard Admin...";
@@ -58,10 +57,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     }
 
-    // JIKA GAGAL LOGIN: Rekam email yang diketik ke dalam session agar UX nyaman
     $_SESSION['old_login_email'] = $_POST['email'] ?? '';
 
-    // Kembalikan ke login.php dengan pesan error yang sudah di-encode aman untuk URL
     header("Location: login.php?error=" . urlencode("Email atau Password Salah"));
     exit();
 }

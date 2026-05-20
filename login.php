@@ -1,7 +1,7 @@
 <?php
 session_start();
 
-// 1. PROTEKSI SESSION: Jika user sudah login, langsung lempar sesuai role-nya
+//session
 if (isset($_SESSION['is_logged_in']) && $_SESSION['is_logged_in'] === true) {
     header("Location: " . ($_SESSION['role'] === 'admin' ? "dashboardAdmin.php" : "produk.php"));
     exit();

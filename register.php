@@ -8,7 +8,7 @@ $result_faculties = mysqli_query($koneksi, $query_faculties);
 $error_message = $_GET['error'] ?? '';
 $success_message = $_GET['success'] ?? '';
 
-// AMBIL DATA INPUT LAMA DARI SESSION, LALU LANGSUNG HAPUS (Agar tidak membekas saat refresh manual)
+// ambil data lama dari sesion
 $old = $_SESSION['old_input'] ?? [];
 unset($_SESSION['old_input']);
 ?>

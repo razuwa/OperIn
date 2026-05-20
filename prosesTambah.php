@@ -25,7 +25,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         die("Error: Format file tidak diizinkan! Hanya menerima JPG, JPEG, PNG, atau WEBP.");
     }
 
-    // randomize nama file agar tidak sama
+    // randomize nama file biar tidak sama
     $new_file_name = time() . '_' . uniqid() . '.' . $file_extension;
     $folder_destination = "assets/" . $new_file_name;
 

@@ -1,7 +1,7 @@
 <?php 
 session_start();
-require 'needLogin.php'; // Proteksi halaman, memastikan variabel $user_id sudah siap
-require 'require/koneksi.php'; // Memanggil $koneksi ke database
+require 'needLogin.php';
+require 'require/koneksi.php';
 
 // Tarik data fakultas secara alfabetis untuk dropdown select
 $query_faculties = "SELECT * FROM faculties ORDER BY nama_fakultas ASC";

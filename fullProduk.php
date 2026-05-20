@@ -9,14 +9,13 @@ $limit = 20;
 $page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
 if ($page < 1) { $page = 1; }
 
-// 3. Hitung offset (titik mulai ambil data di database)
 $offset = ($page - 1) * $limit;
 
 // tentukan jumlah halaman
 $total_query = "SELECT COUNT(*) AS total FROM products";
 $total_result = mysqli_query($koneksi, $total_query);
 $total_data = mysqli_fetch_assoc($total_result)['total'];
-$total_pages = ceil($total_data / $limit); // Dibulatkan ke atas
+$total_pages = ceil($total_data / $limit);
 
 //ambil 20 data produk pertama 
 $query = "SELECT p.*, f.nama_fakultas AS fakultas 

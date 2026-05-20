@@ -10,7 +10,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $whatsapp = mysqli_real_escape_string($koneksi, $_POST['whatsapp']);
     $faculty_id = (int)$_POST['faculty_id'];
 
-    // FUNGSI UTAMANYA: Bikin fungsi pembantu untuk simpan session lama lalu redirect
+    // simpan session lama biar gak ilang
     function kirimError($pesan) {
         $_SESSION['old_input'] = [
             'nama' => $_POST['nama'],
@@ -22,23 +22,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         exit();
     }
 
-    // 1. Validasi: Cek kecocokan password
+    // validasi passwowrd
     if ($password !== $confirm_password) {
         kirimError("Konfirmasi kata sandi tidak cocok!");
     } 
 
-    // 2. Validasi: Cek panjang karakter password
+    // validasi karakter
     if (strlen($password) < 6) {
         kirimError("Kata sandi minimal harus 6 karakter!");
     }
 
-    // 3. Validasi: Cek apakah email sudah terdaftar
+    // validasi email terdaftar
     $check_email = mysqli_query($koneksi, "SELECT id FROM users WHERE email = '$email'");
     if (mysqli_num_rows($check_email) > 0) {
-        kirimError("Email sudah terdaftar! Gunakan email lain.");
+        kirimError("Email sudah terdaftar!");
     }
 
-    // 4. Jika lolos validasi, hapus session old_input (jika ada sisa sebelumnya)
     unset($_SESSION['old_input']);
     
     $hashed_password = password_hash($password, PASSWORD_DEFAULT);
