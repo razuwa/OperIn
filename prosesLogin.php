@@ -1,74 +1,68 @@
 <?php
 session_start();
-//array user sementara
-$users = [
-    [
-        'email' => 'mahasiswa@student.uns.ac.id',
-        'password' => 'password123',
-        'nama' => 'Zidnii Rajwa'
-    ]
-];
+require 'require/koneksi.php';
 
-$admins = [
-    [
-        'email' => 'admin@operin.id',
-        'password' => 'admin123',
-        'nama' => 'Admin OperIn'
-    ]
-];
-$input_email = $_POST['email'] ?? ''; 
-$input_pass  = $_POST['password'] ?? '';
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $email = mysqli_real_escape_string($koneksi, $_POST['email'] ?? '');
+    $password = $_POST['password'] ?? '';
 
-$login_sukses = false;
-$nama_user = "";
-$redirect_url = "produk.php";
+    // Query mencari email di tabel users
+    $query = "SELECT * FROM users WHERE email = '$email'";
+    $result = mysqli_query($koneksi, $query);
 
-foreach ($users as $user) {
-    if ($user['email'] === $input_email && $user['password'] === $input_pass) {
-        $login_sukses = true;
-        $nama_user = $user['nama'];
-        $redirect_url = "produk.php";
-        break;
+    if ($result && mysqli_num_rows($result) === 1) {
+        $user = mysqli_fetch_assoc($result);
+
+        // Verifikasi password (menggunakan password_verify karena data di-hash saat register)
+        if (password_verify($password, $user['password'])) {
+            
+            // Hapus session email lama karena login sudah berhasil
+            unset($_SESSION['old_login_email']);
+
+            // 1. SIMPAN SESI UTAMA (Termasuk user_id untuk keperluan upload produk)
+            $_SESSION['user_id']      = $user['id'];
+            $_SESSION['user_name']    = $user['nama'];
+            $_SESSION['role']         = $user['role']; // Berisi 'mahasiswa' atau 'admin'
+            $_SESSION['is_logged_in'] = true;
+
+            // 2. PEMBEDA ROLE: Menentukan arah halaman redirect
+            if ($user['role'] === 'admin') {
+                $redirect_url = "dashboardAdmin.php";
+                $pesan_redirect = "Mengalihkan Anda ke Dashboard Admin...";
+            } else {
+                $redirect_url = "produk.php";
+                $pesan_redirect = "Mengalihkan Anda ke Etalase Produk...";
+            }
+            ?>
+            <!DOCTYPE html>
+            <html lang="en">
+            <head>
+                <meta charset="UTF-8">
+                <meta http-equiv="refresh" content="2;url=<?= $redirect_url ?>">
+                <title>Memproses...</title>
+                <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+            </head>
+            <body class="bg-sky-600 flex items-center justify-center min-h-screen">
+                <div class="bg-white p-8 rounded-2xl shadow-xl text-center max-w-sm w-full mx-4">
+                    <div class="mb-4 text-green-500">
+                        <svg class="w-16 h-16 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                    </div>
+                    <h1 class="text-2xl font-bold text-gray-800">Halo, <?= htmlspecialchars($user['nama']) ?>!</h1>
+                    <p class="text-gray-500 mt-2"><?= $pesan_redirect ?></p>
+                    <div class="mt-4 animate-spin inline-block w-6 h-6 border-4 border-sky-500 border-t-transparent rounded-full"></div>
+                </div>
+            </body>
+            </html>
+            <?php
+            exit();
+        }
     }
-}
 
-foreach ($admins as $admin) {
-    if ($admin['email'] === $input_email && $admin['password'] === $input_pass) {
-        $login_sukses = true;
-        $nama_user = $admin['nama'];
-        $redirect_url = "dashboardAdmin.php";
-        break;
-    }
-}
+    // JIKA GAGAL LOGIN: Rekam email yang diketik ke dalam session agar UX nyaman
+    $_SESSION['old_login_email'] = $_POST['email'] ?? '';
 
-if ($login_sukses) {
-    $_SESSION['user_name'] = $nama_user;
-    $_SESSION['is_logged_in'] = true;
-} else {
-    header("Location: login.php?error=Gagal Login");
+    // Kembalikan ke login.php dengan pesan error yang sudah di-encode aman untuk URL
+    header("Location: login.php?error=" . urlencode("Email atau Password Salah"));
     exit();
 }
 ?>
-
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Proses Login...</title>
-    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
-    <meta http-equiv="refresh" content="2;url=<?= $redirect_url ?>">
-</head>
-<body class="bg-sky-600 flex items-center justify-center min-h-screen">
-    <div class="bg-white p-8 rounded-2xl shadow-xl text-center">
-        <div class="mb-4 text-green-500">
-            <svg class="w-16 h-16 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-            </svg>
-        </div>
-        <h1 class="text-2xl font-bold text-gray-800">Halo, <?= htmlspecialchars($nama_user) ?>!</h1>
-        <p class="text-gray-500 mt-2">Login berhasil. Mengalihkan Anda ke halaman produk...</p>
-        <div class="mt-4 animate-spin inline-block w-6 h-6 border-4 border-sky-500 border-t-transparent rounded-full"></div>
-    </div>
-</body>
-</html>
