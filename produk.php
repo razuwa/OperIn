@@ -32,7 +32,7 @@ if ($result) {
     <div id="produk" class="flex flex-col min-h-screen bg-amber-50">
         <div class="bg-sky-600 text-white font-semibold p-3 border-b border-white/20">
             <div class="max-w-7xl mx-auto px-4">
-            Welcome To Operin: Platform Preloved Mahasiswa
+            Hai <?= isset($_SESSION['user_name']) ? htmlspecialchars($_SESSION['user_name']) : '' ?>! Welcome to OperIn
             </div>
         </div>
         <?php include 'components/navbar.php'; ?>
