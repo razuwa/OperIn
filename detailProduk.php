@@ -85,7 +85,7 @@ $p = mysqli_fetch_assoc($result);
                     <a href="https://wa.me/<?= $p['whatsapp'] ?>?text=Halo%20<?= urlencode($p['nama_penjual']) ?>%2C%20saya%20tertarik%20dengan%20produk%20<?= urlencode($p['name']) ?>%20di%20OperIn." 
                        target="_blank"
                        class="px-6 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-all font-semibold flex items-center gap-2">
-                        Hubungi Penjual (WhatsApp)
+                        Hubungi Penjual via WhatsApp
                     </a>
                 </div>
             </div>
