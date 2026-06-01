@@ -21,8 +21,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             // simpan sesi
             $_SESSION['user_id']      = $user['id'];
             $_SESSION['user_name']    = $user['nama'];
-            $_SESSION['role']         = $user['role']; // Berisi 'mahasiswa' atau 'admin'
+            $_SESSION['role']         = $user['role'];
             $_SESSION['is_logged_in'] = true;
+
+            // cookie 5 menit
+            setcookie('operin_last_active', 'true', time() + 300, '/');
 
             // role
             if ($user['role'] === 'admin') {
