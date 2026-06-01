@@ -7,7 +7,7 @@ $user_id = $_SESSION['user_id'];
 $error_msg = $_GET['error'] ?? '';
 $success_msg = $_GET['success'] ?? '';
 
-// hapus barang
+// hapus produk
 if (isset($_GET['action']) && $_GET['action'] === 'delete' && isset($_GET['id'])) {
     $delete_id = (int)$_GET['id'];
     $query_delete = "DELETE FROM products WHERE id = $delete_id AND user_id = $user_id";
@@ -21,11 +21,12 @@ if (isset($_GET['action']) && $_GET['action'] === 'delete' && isset($_GET['id'])
     }
 }
 
-// save changes edit
+// savve changes edit
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_product'])) {
     $product_id = (int)$_POST['product_id'];
     $name = mysqli_real_escape_string($koneksi, $_POST['name']);
     $price = (int)$_POST['price'];
+    $category_id = (int)$_POST['category_id'];
     $faculty_id = (int)$_POST['faculty_id'];
     $kondisi = mysqli_real_escape_string($koneksi, $_POST['kondisi']);
     $description = mysqli_real_escape_string($koneksi, $_POST['description']);
@@ -39,13 +40,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_product'])) {
         $folder_destination = "assets/" . $new_file_name;
 
         if (move_uploaded_file($tmp_name, $folder_destination)) {
-            $query_update = "UPDATE products SET name='$name', price=$price, faculty_id=$faculty_id, kondisi='$kondisi', description='$description', image='$folder_destination' WHERE id=$product_id AND user_id=$user_id";
+            $query_update = "UPDATE products SET name='$name', price=$price, category_id=$category_id, faculty_id=$faculty_id, kondisi='$kondisi', description='$description', image='$folder_destination' WHERE id=$product_id AND user_id=$user_id";
         } else {
             header("Location: kelolaProduk.php?error=" . urlencode("Gagal mengunggah gambar baru."));
             exit();
         }
     } else {
-        $query_update = "UPDATE products SET name='$name', price=$price, faculty_id=$faculty_id, kondisi='$kondisi', description='$description' WHERE id=$product_id AND user_id=$user_id";
+        $query_update = "UPDATE products SET name='$name', price=$price, category_id=$category_id, faculty_id=$faculty_id, kondisi='$kondisi', description='$description' WHERE id=$product_id AND user_id=$user_id";
     }
 
     if (mysqli_query($koneksi, $query_update)) {
@@ -70,12 +71,19 @@ if (isset($_GET['action']) && $_GET['action'] === 'edit' && isset($_GET['id'])) 
     }
 }
 
-// query semua data
+// query untuk dropdown
 $result_faculties = mysqli_query($koneksi, "SELECT * FROM faculties ORDER BY nama_fakultas ASC");
+$result_categories = mysqli_query($koneksi, "SELECT * FROM categories ORDER BY nama_kategori ASC"); 
 
-$query_tabel = "SELECT p.*, f.nama_fakultas AS fakultas 
+if (!$result_categories) {
+    die("Gagal memuat data master kategori: " . mysqli_error($koneksi));
+}
+
+// query tabel utama
+$query_tabel = "SELECT p.*, f.nama_fakultas AS fakultas, c.nama_kategori AS kategori 
                 FROM products p
                 JOIN faculties f ON p.faculty_id = f.id
+                JOIN categories c ON p.category_id = c.id
                 WHERE p.user_id = $user_id
                 ORDER BY p.id DESC";
 $result_tabel = mysqli_query($koneksi, $query_tabel);
@@ -139,6 +147,15 @@ $result_tabel = mysqli_query($koneksi, $query_tabel);
                         </div>
 
                         <div class="col-span-2">
+                            <label class="block text-gray-600 font-semibold mb-1">Kategori Produk</label>
+                            <select name="category_id" required class="w-full border border-gray-300 rounded-lg px-3 py-2 text-gray-700 focus:outline-none focus:border-sky-500 bg-white">
+                                <?php while ($c = mysqli_fetch_assoc($result_categories)) : ?>
+                                    <option value="<?= $c['id'] ?>" <?= $product_to_edit['category_id'] == $c['id'] ? 'selected' : '' ?>><?= htmlspecialchars($c['nama_kategori']) ?></option>
+                                <?php endwhile; ?>
+                            </select>
+                        </div>
+
+                        <div class="col-span-2">
                             <label class="block text-gray-600 font-semibold mb-1">Fakultas / Tempat Pertemuan COD</label>
                             <select name="faculty_id" required class="w-full border border-gray-300 rounded-lg px-3 py-2 text-gray-700 focus:outline-none focus:border-sky-500 bg-white">
                                 <?php while ($f = mysqli_fetch_assoc($result_faculties)) : ?>
@@ -174,6 +191,7 @@ $result_tabel = mysqli_query($koneksi, $query_tabel);
                         <tr class="bg-gray-50 text-gray-500 font-semibold border-b border-gray-200 uppercase tracking-wider">
                             <th class="py-3 px-4 w-16 text-center">Gambar</th>
                             <th class="py-3 px-4">Nama Produk</th>
+                            <th class="py-3 px-4">Kategori</th> 
                             <th class="py-3 px-4">Harga</th>
                             <th class="py-3 px-4 w-20">Kondisi</th>
                             <th class="py-3 px-4">Lokasi COD</th>
@@ -183,7 +201,7 @@ $result_tabel = mysqli_query($koneksi, $query_tabel);
                     <tbody class="divide-y divide-gray-200 text-gray-700">
                         <?php if (mysqli_num_rows($result_tabel) === 0) : ?>
                             <tr>
-                                <td colspan="6" class="text-center py-10 text-gray-400 font-medium">Anda belum pernah mengunggah produk.</td>
+                                <td colspan="7" class="text-center py-10 text-gray-400 font-medium">Anda belum pernah mengunggah produk.</td>
                             </tr>
                         <?php else : ?>
                             <?php while ($row = mysqli_fetch_assoc($result_tabel)) : ?>
@@ -192,6 +210,11 @@ $result_tabel = mysqli_query($koneksi, $query_tabel);
                                         <img src="<?= htmlspecialchars($row['image']) ?>" class="w-8 h-8 object-cover rounded border border-gray-200 bg-white mx-auto">
                                     </td>
                                     <td class="py-2.5 px-4 font-semibold text-slate-800"><?= htmlspecialchars($row['name']) ?></td>
+                                    <td class="py-2.5 px-4">
+                                        <span class="bg-sky-50 text-sky-600 border border-sky-200 px-2 py-0.5 rounded text-[11px] font-semibold">
+                                            <?= htmlspecialchars($row['kategori']) ?>
+                                        </span>
+                                    </td>
                                     <td class="py-2.5 px-4 text-slate-900 font-medium">Rp<?= number_format($row['price'], 0, ',', '.') ?></td>
                                     <td class="py-2.5 px-4">
                                         <span class="px-1.5 py-0.5 rounded text-[10px] font-bold tracking-wide <?= $row['kondisi'] === 'Baru' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-gray-100 text-gray-700 border border-gray-300' ?> border">

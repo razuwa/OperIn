@@ -7,6 +7,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     $name = mysqli_real_escape_string($koneksi, $_POST['name']);
     $price = (int)$_POST['price'];
+    $category_id = (int)$_POST['category_id'];
     $faculty_id = (int)$_POST['faculty_id'];
     $kondisi = mysqli_real_escape_string($koneksi, $_POST['kondisi']);
     $description = mysqli_real_escape_string($koneksi, $_POST['description']);
@@ -32,9 +33,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // pindahkan dari temp ke folder
     if (move_uploaded_file($tmp_name, $folder_destination)) {
         
-        // simpan ke tabel
-        $query_insert = "INSERT INTO products (user_id, name, price, description, image, kondisi, faculty_id) 
-                         VALUES ($user_id, '$name', $price, '$description', '$folder_destination', '$kondisi', $faculty_id)";
+        $query_insert = "INSERT INTO products (user_id, name, price, description, image, kondisi, category_id, faculty_id) 
+                         VALUES ($user_id, '$name', $price, '$description', '$folder_destination', '$kondisi', $category_id, $faculty_id)";
         
         if (mysqli_query($koneksi, $query_insert)) {
             //redirect ke halaman 

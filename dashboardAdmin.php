@@ -10,7 +10,7 @@ if (!isset($_SESSION['is_logged_in']) || $_SESSION['is_logged_in'] !== true || (
 $error_msg = $_GET['error'] ?? '';
 $success_msg = $_GET['success'] ?? '';
 
-//hapus produk
+// hapus produk
 if (isset($_GET['action']) && $_GET['action'] === 'delete' && isset($_GET['id'])) {
     $delete_id = (int)$_GET['id'];
     $query_delete = "DELETE FROM products WHERE id = $delete_id";
@@ -23,11 +23,12 @@ if (isset($_GET['action']) && $_GET['action'] === 'delete' && isset($_GET['id'])
     }
 }
 
-//edit produk
+// simpan produk
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_product'])) {
     $product_id = (int)$_POST['product_id'];
     $name = mysqli_real_escape_string($koneksi, $_POST['name']);
     $price = (int)$_POST['price'];
+    $category_id = (int)$_POST['category_id'];
     $faculty_id = (int)$_POST['faculty_id'];
     $kondisi = mysqli_real_escape_string($koneksi, $_POST['kondisi']);
     $description = mysqli_real_escape_string($koneksi, $_POST['description']);
@@ -42,13 +43,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_product'])) {
         $folder_destination = "assets/" . $new_file_name;
 
         if (move_uploaded_file($tmp_name, $folder_destination)) {
-            $query_update = "UPDATE products SET name='$name', price=$price, faculty_id=$faculty_id, kondisi='$kondisi', description='$description', image='$folder_destination' WHERE id=$product_id";
+            $query_update = "UPDATE products SET name='$name', price=$price, category_id=$category_id, faculty_id=$faculty_id, kondisi='$kondisi', description='$description', image='$folder_destination' WHERE id=$product_id";
         } else {
             header("Location: dashboardAdmin.php?error=" . urlencode("Gagal mengunggah gambar baru"));
             exit();
         }
     } else {
-        $query_update = "UPDATE products SET name='$name', price=$price, faculty_id=$faculty_id, kondisi='$kondisi', description='$description' WHERE id=$product_id";
+        $query_update = "UPDATE products SET name='$name', price=$price, category_id=$category_id, faculty_id=$faculty_id, kondisi='$kondisi', description='$description' WHERE id=$product_id";
     }
 
     if (mysqli_query($koneksi, $query_update)) {
@@ -60,6 +61,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_product'])) {
     }
 }
 
+// ambil data untuk edit
 $edit_mode = false;
 $product_to_edit = [];
 if (isset($_GET['action']) && $_GET['action'] === 'edit' && isset($_GET['id'])) {
@@ -72,17 +74,19 @@ if (isset($_GET['action']) && $_GET['action'] === 'edit' && isset($_GET['id'])) 
     }
 }
 
-// angka statisik
+// ambil data untuk statistik
 $total_produk = mysqli_fetch_assoc(mysqli_query($koneksi, "SELECT COUNT(*) AS total FROM products"))['total'];
 $total_mahasiswa = mysqli_fetch_assoc(mysqli_query($koneksi, "SELECT COUNT(*) AS total FROM users WHERE role = 'mahasiswa'"))['total'];
 $total_fakultas = mysqli_fetch_assoc(mysqli_query($koneksi, "SELECT COUNT(*) AS total FROM faculties"))['total'];
 
 $result_faculties = mysqli_query($koneksi, "SELECT * FROM faculties ORDER BY nama_fakultas ASC");
+$result_categories = mysqli_query($koneksi, "SELECT * FROM categories ORDER BY nama_kategori ASC");
 
-// data tabel produk
-$query_tabel = "SELECT p.*, f.nama_fakultas AS fakultas 
+// mengambil semua data produk
+$query_tabel = "SELECT p.*, f.nama_fakultas AS fakultas, c.nama_kategori AS kategori 
                 FROM products p
                 JOIN faculties f ON p.faculty_id = f.id
+                JOIN categories c ON p.category_id = c.id
                 ORDER BY p.id DESC";
 $result_tabel = mysqli_query($koneksi, $query_tabel);
 ?>
@@ -97,58 +101,11 @@ $result_tabel = mysqli_query($koneksi, $query_tabel);
 </head>
 <body class="bg-gray-100 min-h-screen flex text-gray-800 antialiased">
 
-    <aside class="w-64 bg-sky-600 text-white flex flex-col shrink-0 shadow-xl fixed left-0 top-0 bottom-0 z-10 justify-between">
-        <div>
-            <div class="p-5 border-b border-white/10 flex items-center gap-3">
-                <img src="assets/logo-operin.png" alt="Logo" class="max-h-8 brightness-0 invert">
-                <span class="font-bold text-2xl tracking-tight">AdminPanel</span>
-            </div>
-
-            <nav class="p-4 space-y-1">
-                <p class="text-[10px] font-bold uppercase tracking-wider text-sky-200/60 px-4 mb-2">Menu Utama</p>
-                <a href="dashboardAdmin.php" class="flex items-center gap-3 px-4 py-2.5 bg-sky-700 rounded-xl font-medium transition-all text-sm">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2H6a2 2 0 01-2-2V16zM14 16a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2h-2a2 2 0 01-2-2V16z"></path></svg>
-                    Semua Produk
-                </a>
-                <a href="produk.php" target="_blank" class="flex items-center gap-3 px-4 py-2.5 text-sky-100 hover:bg-sky-500/50 rounded-xl transition-all text-sm">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path></svg>
-                    Lihat Etalase
-                </a>
-
-                <p class="text-[10px] font-bold uppercase tracking-wider text-sky-200/60 px-4 pt-4 mb-2">Promosi</p>
-                <div class="flex items-center gap-3 px-4 py-2.5 text-sky-200/40 bg-sky-700/20 rounded-xl text-sm cursor-not-allowed select-none">
-                    <span>Produk Dipromosikan</span>
-                </div>
-                <div class="flex items-center gap-3 px-4 py-2.5 text-sky-200/40 bg-sky-700/20 rounded-xl text-sm cursor-not-allowed select-none">
-                    <span>Menunggu Persetujuan</span>
-                </div>
-
-                <p class="text-[10px] font-bold uppercase tracking-wider text-sky-200/60 px-4 pt-4 mb-2">Pengguna</p>
-                <div class="flex items-center gap-3 px-4 py-2.5 text-sky-200/40 bg-sky-700/20 rounded-xl text-sm cursor-not-allowed select-none">
-                    <svg class="w-5 h-5 opacity-40" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
-                    Manajemen User
-                </div>
-            </nav>
-        </div>
-
-        <div class="p-4 border-t border-white/10">
-            <a href="logout.php" onclick="return confirm('Apakah Anda yakin ingin keluar?')" class="flex items-center gap-3 px-4 py-2.5 bg-red-500 hover:bg-red-600 rounded-xl text-sm font-semibold transition-all shadow-md text-white">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
-                Keluar Sistem
-            </a>
-        </div>
-    </aside>
-
+    <?php include 'components/sidebarAdmin.php'; ?>
+    
     <div class="flex-1 flex flex-col pl-64">
         
-        <header class="bg-white shadow-sm py-4 px-8 flex justify-between items-center fixed right-0 top-0 left-64 bg-white/95 backdrop-blur z-20">
-            <h1 class="text-xl font-bold text-gray-800">Ringkasan Sistem</h1>
-            <div class="flex items-center gap-3">
-                <span class="text-sm bg-sky-50 text-sky-600 font-semibold px-3 py-1 rounded-full border border-sky-200">
-                    Sesi: <?= htmlspecialchars($_SESSION['user_name'] ?? 'Admin') ?>
-                </span>
-            </div>
-        </header>
+        <?php include 'components/headerAdmin.php'; ?>
 
         <main class="p-8 max-w-7xl w-full mx-auto space-y-8 mt-16">
             
@@ -180,6 +137,15 @@ $result_tabel = mysqli_query($koneksi, $query_tabel);
                             <select name="kondisi" required class="w-full border border-gray-300 rounded-lg px-3 py-2 text-gray-800 focus:outline-none focus:border-sky-500 bg-white">
                                 <option value="Baru" <?= $product_to_edit['kondisi'] === 'Baru' ? 'selected' : '' ?>>Baru</option>
                                 <option value="Bekas" <?= $product_to_edit['kondisi'] === 'Bekas' ? 'selected' : '' ?>>Bekas</option>
+                            </select>
+                        </div>
+
+                        <div class="col-span-2">
+                            <label class="block text-gray-500 font-semibold mb-1">Kategori Produk</label>
+                            <select name="category_id" required class="w-full border border-gray-300 rounded-lg px-3 py-2 text-gray-800 focus:outline-none focus:border-sky-500 bg-white">
+                                <?php while ($c = mysqli_fetch_assoc($result_categories)) : ?>
+                                    <option value="<?= $c['id'] ?>" <?= $product_to_edit['category_id'] == $c['id'] ? 'selected' : '' ?>><?= htmlspecialchars($c['nama_kategori']) ?></option>
+                                <?php endwhile; ?>
                             </select>
                         </div>
 
@@ -255,6 +221,7 @@ $result_tabel = mysqli_query($koneksi, $query_tabel);
                             <tr class="bg-gray-50 text-gray-400 text-xs uppercase font-semibold border-b border-gray-100">
                                 <th class="p-4 pl-6 w-20">Foto</th>
                                 <th class="p-4">Nama Barang</th>
+                                <th class="p-4">Kategori</th> 
                                 <th class="p-4">Fakultas</th>
                                 <th class="p-4">Harga</th>
                                 <th class="p-4 text-center w-40">Aksi</th>
@@ -263,7 +230,7 @@ $result_tabel = mysqli_query($koneksi, $query_tabel);
                         <tbody class="divide-y divide-gray-100 text-sm text-gray-700">
                             <?php if (mysqli_num_rows($result_tabel) === 0) : ?>
                                 <tr>
-                                    <td colspan="5" class="text-center py-8 text-gray-400 font-medium">Tidak ada data produk di database.</td>
+                                    <td colspan="6" class="text-center py-8 text-gray-400 font-medium">Tidak ada data produk di database.</td>
                                 </tr>
                             <?php else : ?>
                                 <?php while ($row = mysqli_fetch_assoc($result_tabel)) : ?>
@@ -272,6 +239,11 @@ $result_tabel = mysqli_query($koneksi, $query_tabel);
                                         <img src="<?= htmlspecialchars($row['image']) ?>" class="w-12 h-12 object-cover rounded-lg border border-gray-200">
                                     </td>
                                     <td class="p-4 font-medium text-gray-900"><?= htmlspecialchars($row['name']) ?></td>
+                                    <td class="p-4">
+                                        <span class="bg-sky-50 text-sky-600 border border-sky-200 px-2 py-0.5 rounded text-xs font-medium">
+                                            <?= htmlspecialchars($row['kategori']) ?>
+                                        </span>
+                                    </td>
                                     <td class="p-4">
                                         <span class="bg-gray-100 px-2 py-0.5 rounded text-xs font-medium text-gray-600">
                                             <?= htmlspecialchars($row['fakultas']) ?>
