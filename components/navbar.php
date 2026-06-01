@@ -22,7 +22,7 @@
 
             <!-- ICONS -->
             <div class="flex gap-5 shrink-0 text-white">
-                <a href="#" class="hover:text-orange-400"><img src="assets/pencil.svg" alt="Edit" class="w-6 h-6"></a>
+                <a href="kelolaProduk.php" class="hover:text-orange-400"><img src="assets/pencil.svg" alt="Edit" class="w-6 h-6"></a>
                 <a href="tambahBarang.php" class="hover:text-orange-400"><svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg></a>
                 <a href="login.php" class="hover:text-orange-400"><svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg></a>
             </div>
