@@ -1,12 +1,5 @@
 <?php
 session_start();
-require 'dataProduk.php';
-
-if (!isset($_SESSION['products'])) {
-    $_SESSION['products'] = $products;
-}
-
-$products = $_SESSION['products'];
 ?>
 
 <!DOCTYPE html>
