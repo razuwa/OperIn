@@ -4,10 +4,11 @@ require 'require/koneksi.php';
 
 $id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
 
-$query = "SELECT p.*, f.nama_fakultas AS fakultas, u.nama AS nama_penjual, u.whatsapp
+$query = "SELECT p.*, f.nama_fakultas AS fakultas, u.nama AS nama_penjual, u.whatsapp, c.nama_kategori AS kategori
           FROM products p
           JOIN faculties f ON p.faculty_id = f.id
           JOIN users u ON p.user_id = u.id
+          JOIN categories c ON p.category_id = c.id
           WHERE p.id = $id";
 
 $result = mysqli_query($koneksi, $query);
@@ -52,18 +53,27 @@ $p = mysqli_fetch_assoc($result);
             <div class="flex flex-col justify-between flex-1">
                 <div>
                     <h1 class="text-2xl font-bold text-gray-800 mt-3 mb-2"><?= htmlspecialchars($p['name']) ?></h1>
+                    
                     <p class="text-3xl font-bold text-orange-500 mb-4">
                         Rp<?= number_format($p['price'], 0, ',', '.') ?>
                     </p>
-                    <div class="flex items-center mb-2 gap-2 text-sm text-gray-500">
+                    
+                    <div class="flex items-center mb-2 gap-2 text-sm text-gray-500 flex-wrap">
+                        <span class="bg-sky-50 text-sky-600 border border-sky-200 px-2 py-0.5 rounded text-[11px] font-semibold">
+                            <?= htmlspecialchars($p['kategori']) ?>
+                        </span>
+                        
                         <span class="bg-orange-50 text-orange-500 border border-orange-200 px-2 py-0.5 rounded text-[11px] font-semibold">
                             <?= htmlspecialchars($p['kondisi']) ?>
                         </span>
-                        <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
-                        </svg>
-                        <?= htmlspecialchars($p['fakultas']) ?>
+                        
+                        <div class="flex items-center gap-1">
+                            <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
+                            </svg>
+                            <?= htmlspecialchars($p['fakultas']) ?>
+                        </div>
                     </div>
                     
                     <p class="text-xs text-gray-400 mb-4">Penjual: <span class="font-semibold text-gray-600"><?= htmlspecialchars($p['nama_penjual']) ?></span></p>
@@ -75,7 +85,7 @@ $p = mysqli_fetch_assoc($result);
                     <a href="https://wa.me/<?= $p['whatsapp'] ?>?text=Halo%20<?= urlencode($p['nama_penjual']) ?>%2C%20saya%20tertarik%20dengan%20produk%20<?= urlencode($p['name']) ?>%20di%20OperIn." 
                        target="_blank"
                        class="px-6 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-all font-semibold flex items-center gap-2">
-                        Hubungi Penjual (WhatsApp)
+                        Hubungi Penjual via WhatsApp
                     </a>
                 </div>
             </div>

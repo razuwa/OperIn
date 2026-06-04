@@ -45,7 +45,7 @@ if ($result) {
 
     <?php include 'components/navbar.php'; ?>
 
-    <div class="max-w-7xl mx-auto px-4 w-full py-8 flex-1">
+    <div class="max-w-6xl mx-auto px-4 w-full py-8 flex-1">
         <div class="flex items-center justify-between py-2 px-5 border-b-2 bg-gray-300 border-sky-300 mb-6">
             <h1 class="text-black font-semibold text-lg">Semua Produk Terdaftar</h1>
             <a href="produk.php" class="text-sky-500 text-sm hover:text-orange-500 transition-colors">← Kembali ke Home</a>
@@ -61,7 +61,7 @@ if ($result) {
                         <img src="<?= htmlspecialchars($p['image']) ?>" class="w-full aspect-square object-cover bg-gray-100 shrink-0">
                         <div class="p-2.5 flex-1 flex flex-col">
                             <div class="min-h-[3rem]">
-                                <p class="text-lg text-gray-700 line-clamp-2 mb-1 leading-tight"><?= htmlspecialchars($p['name']) ?></p>
+                                <p class="text-base font-medium text-gray-700 line-clamp-2 mb-1 leading-tight"><?= htmlspecialchars($p['name']) ?></p>
                             </div>
                             <div class="mt-auto">
                                 <p class="text-base font-semibold text-orange-500 mb-1">

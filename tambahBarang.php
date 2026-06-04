@@ -3,12 +3,20 @@ session_start();
 require 'needLogin.php';
 require 'require/koneksi.php';
 
-// Tarik data fakultas secara alfabetis untuk dropdown select
+// ambil data fakultas
 $query_faculties = "SELECT * FROM faculties ORDER BY nama_fakultas ASC";
 $result_faculties = mysqli_query($koneksi, $query_faculties);
 
 if (!$result_faculties) {
     die("Gagal memuat data master fakultas: " . mysqli_error($koneksi));
+}
+
+// ambil data kategori
+$query_categories = "SELECT * FROM categories ORDER BY id ASC";
+$result_categories = mysqli_query($koneksi, $query_categories);
+
+if (!$result_categories) {
+    die("Gagal memuat data master kategori: " . mysqli_error($koneksi));
 }
 ?>
 <!DOCTYPE html>
@@ -44,6 +52,17 @@ if (!$result_faculties) {
                     <input type="number" name="price" placeholder="185000" required
                         class="w-full px-4 py-2 bg-gray-100 focus:outline-none text-gray-700">
                 </div>
+            </div>
+
+            <div class="mb-4">
+                <label class="block text-sm text-gray-600 mb-1">Kategori Produk</label>
+                <select name="category_id" required
+                class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:border-sky-400 bg-gray-100 text-gray-700">
+                    <option value="" disabled selected>-- Pilih Kategori Barang --</option>
+                    <?php while ($c = mysqli_fetch_assoc($result_categories)) : ?>
+                        <option value="<?= $c['id'] ?>"><?= htmlspecialchars($c['nama_kategori']) ?></option>
+                    <?php endwhile; ?>
+                </select>
             </div>
             
             <div class="mb-4">
