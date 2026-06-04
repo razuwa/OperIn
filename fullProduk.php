@@ -48,6 +48,7 @@ if ($result) {
 
     <?php include 'components/greetings.php'; ?>
     <?php include 'components/navbar.php'; ?>
+    <?php include 'components/filters.php'; ?>
 
     <main class="max-w-7xl mx-auto px-4 md:px-6 w-full py-8 space-y-6 flex-1">
         
@@ -58,7 +59,10 @@ if ($result) {
                     Semua Produk
                 </h2>
             </div>
-            <a href="produk.php" class="text-xs font-bold text-sky-600 hover:text-orange-500 transition-colors shrink-0">← Kembali ke Home</a>
+            <a href="produk.php" class="inline-flex items-center gap-1 text-xs font-bold text-slate-500 hover:text-slate-800 transition-colors">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+                Kembali
+            </a>
         </div>
 
         <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-5">

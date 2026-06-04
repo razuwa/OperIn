@@ -50,6 +50,7 @@ if ($result_baru) {
 
     <?php include 'components/greetings.php'; ?>
     <?php include 'components/navbar.php'; ?>
+    <?php include 'components/filters.php'; ?>
 
     <main class="max-w-7xl mx-auto px-4 md:px-6 w-full py-8 space-y-12 flex-1">
         

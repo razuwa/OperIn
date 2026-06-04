@@ -1,24 +1,22 @@
-<?php 
+<?php
 session_start();
-require 'needLogin.php';
+require 'needLogin.php'; // Proteksi: Harus login terlebih dahulu
 require 'require/koneksi.php';
 
-// ambil data fakultas
-$query_faculties = "SELECT * FROM faculties ORDER BY nama_fakultas ASC";
-$result_faculties = mysqli_query($koneksi, $query_faculties);
+$user_id = $_SESSION['user_id'];
+$error_msg = $_GET['error'] ?? '';
 
-if (!$result_faculties) {
-    die("Gagal memuat data master fakultas: " . mysqli_error($koneksi));
-}
+// data default fakultas
+$query_user = "SELECT faculty_id FROM users WHERE id = $user_id";
+$result_user = mysqli_query($koneksi, $query_user);
+$user_data = mysqli_fetch_assoc($result_user);
+$default_faculty_id = $user_data['faculty_id'] ?? 0;
 
-// ambil data kategori
-$query_categories = "SELECT * FROM categories ORDER BY id ASC";
-$result_categories = mysqli_query($koneksi, $query_categories);
-
-if (!$result_categories) {
-    die("Gagal memuat data master kategori: " . mysqli_error($koneksi));
-}
+// dropdown
+$result_faculties = mysqli_query($koneksi, "SELECT * FROM faculties ORDER BY nama_fakultas ASC");
+$result_categories = mysqli_query($koneksi, "SELECT * FROM categories ORDER BY nama_kategori ASC");
 ?>
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -27,87 +25,118 @@ if (!$result_categories) {
     <title>Tambah Produk - OperIn</title>
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
 </head>
-<body class="min-h-screen bg-sky-600 flex items-center justify-center p-6">
+<body class="min-h-screen bg-slate-50 text-slate-800 antialiased flex flex-col">
 
-    <div class="bg-amber-50 rounded-2xl shadow-lg p-10 w-full max-w-[500px]">
-        <div class="flex items-center justify-center gap-2 mb-2">
-            <img src="assets/logo-operin-blue.png" alt="Logo Operin" class="max-h-8">
-            <h2 class="text-2xl font-bold text-sky-600">OperIn</h2>
+    <?php include 'components/navbar.php'; ?>
+
+    <main class="flex-1 max-w-3xl w-full mx-auto px-4 py-8">
+        
+        <div class="flex items-center justify-between mb-6">
+            <p class="text-xs text-slate-400">
+                <a href="produk.php" class="hover:text-sky-600 transition-colors">Beranda</a> 
+                <span class="mx-2">/</span> 
+                <span class="text-slate-600 font-medium">Tambah Produk</span>
+            </p>
+            <a href="produk.php" class="inline-flex items-center gap-1 text-xs font-bold text-slate-500 hover:text-slate-800 transition-colors">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+                Kembali
+            </a>
         </div>
 
-        <h1 class="text-lg font-semibold text-gray-700 mb-2 text-center">Tambah Produk Baru</h1>
+        <div class="border-b border-slate-200 pb-3 mb-6">
+            <h1 class="text-xl font-bold text-slate-900 tracking-tight flex items-center gap-2">
+                <span class="w-1 h-5 bg-sky-500 rounded-xs"></span>
+                Tambah Produk Baru
+            </h1>
+        </div>
 
-        <form method="POST" action="prosesTambah.php" enctype="multipart/form-data">
-            
-            <div class="mb-4">
-                <label class="block text-sm text-gray-600 mb-1">Nama Produk</label>
-                <input type="text" name="name" placeholder="Contoh: Rice Cooker Tatung" required
-                class="w-full bg-gray-100 border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:border-sky-400 text-gray-700">
+        <?php if (!empty($error_msg)) : ?>
+            <div class="bg-red-50 border border-red-200 text-red-700 px-4 py-2.5 rounded-xl text-xs font-semibold mb-4">
+                <?= htmlspecialchars($error_msg) ?>
             </div>
+        <?php endif; ?>
 
-            <div class="mb-4">
-                <label class="block text-sm text-gray-600 mb-1">Harga (Rp)</label>
-                <div class="flex items-center border border-gray-300 rounded-lg overflow-hidden focus-within:border-sky-400 bg-gray-100">
-                    <span class="bg-gray-200 px-3 py-2 text-gray-500 text-sm border-r border-gray-300">Rp</span>
-                    <input type="number" name="price" placeholder="185000" required
-                        class="w-full px-4 py-2 bg-gray-100 focus:outline-none text-gray-700">
+        <div class="bg-white border border-slate-200/60 p-6 rounded-2xl shadow-xs">
+            
+            <form method="POST" action="prosesTambah.php" enctype="multipart/form-data" class="space-y-5 text-xs font-bold text-slate-500">
+                
+                <div>
+                    <label class="block mb-1 text-slate-400 font-medium">Nama Produk / Barang</label>
+                    <input type="text" name="name" placeholder="Contoh: Jas Almamater UNS Ukuran L" required 
+                    class="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-slate-800 text-sm font-normal bg-slate-50/50 focus:outline-none focus:border-sky-500 focus:bg-white transition-all">
                 </div>
-            </div>
 
-            <div class="mb-4">
-                <label class="block text-sm text-gray-600 mb-1">Kategori Produk</label>
-                <select name="category_id" required
-                class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:border-sky-400 bg-gray-100 text-gray-700">
-                    <option value="" disabled selected>-- Pilih Kategori Barang --</option>
-                    <?php while ($c = mysqli_fetch_assoc($result_categories)) : ?>
-                        <option value="<?= $c['id'] ?>"><?= htmlspecialchars($c['nama_kategori']) ?></option>
-                    <?php endwhile; ?>
-                </select>
-            </div>
-            
-            <div class="mb-4">
-                <label class="block text-sm text-gray-600 mb-1">Fakultas (Lokasi COD)</label>
-                <select name="faculty_id" required
-                class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:border-sky-400 bg-gray-100 text-gray-700">
-                    <option value="" disabled selected>-- Pilih Lokasi Fakultas --</option>
-                    <?php while ($f = mysqli_fetch_assoc($result_faculties)) : ?>
-                        <option value="<?= $f['id'] ?>"><?= htmlspecialchars($f['nama_fakultas']) ?></option>
-                    <?php endwhile; ?>
-                </select>
-            </div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block mb-1 text-slate-400 font-medium">Harga Barang (Rp)</label>
+                        <input type="number" name="price" placeholder="Contoh: 50000" required 
+                        class="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-slate-800 text-sm font-normal bg-slate-50/50 focus:outline-none focus:border-sky-500 focus:bg-white transition-all">
+                    </div>
+                    <div>
+                        <label class="block mb-1 text-slate-400 font-medium">Keadaan / Kondisi Fisik</label>
+                        <select name="kondisi" required 
+                        class="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-slate-800 text-sm font-normal bg-white focus:outline-none focus:border-sky-500 transition-all">
+                            <option value="" disabled selected>-- Pilih Kondisi Barang --</option>
+                            <option value="Baru">Baru</option>
+                            <option value="Bekas">Bekas</option>
+                        </select>
+                    </div>
+                </div>
 
-            <div class="mb-4">
-                <label class="block text-sm text-gray-600 mb-1">Kondisi</label>
-                <select name="kondisi" required
-                class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:border-sky-400 bg-gray-100 text-gray-700">
-                    <option value="Baru">Baru</option>
-                    <option value="Bekas">Bekas</option>
-                </select>
-            </div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block mb-1 text-slate-400 font-medium">Kategori Produk</label>
+                        <select name="category_id" required 
+                        class="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-slate-800 text-sm font-normal bg-white focus:outline-none focus:border-sky-500 transition-all">
+                            <option value="" disabled selected>-- Pilih Kategori --</option>
+                            <?php while ($c = mysqli_fetch_assoc($result_categories)) : ?>
+                                <option value="<?= $c['id'] ?>"><?= htmlspecialchars($c['nama_kategori']) ?></option>
+                            <?php endwhile; ?>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block mb-1 text-slate-400 font-medium">Lokasi COD</label>
+                        <select name="faculty_id" required 
+                        class="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-slate-800 text-sm font-normal bg-white focus:outline-none focus:border-sky-500 transition-all">
+                            <option value="" disabled>-- Pilih Fakultas --</option>
+                            <?php while ($f = mysqli_fetch_assoc($result_faculties)) : ?>
+                                <option value="<?= $f['id'] ?>" <?= $f['id'] == $default_faculty_id ? 'selected' : '' ?>>
+                                    <?= htmlspecialchars($f['nama_fakultas']) ?>
+                                </option>
+                            <?php endwhile; ?>
+                        </select>
+                    </div>
+                </div>
 
-            <div class="mb-4">
-                <label class="block text-sm text-gray-600 mb-1">Deskripsi</label>
-                <textarea name="description" rows="3" placeholder="Ceritakan kondisi barang atau alasan dijual..." required
-                class="w-full bg-gray-100 border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:border-sky-400 text-gray-700"></textarea>
-            </div>
+                <div>
+                    <label class="block mb-1 text-slate-400 font-medium">Deskripsi Barang</label>
+                    <textarea name="description" rows="4" placeholder="Jelaskan secara rinci minus pemakaian, alasan dijual, kelengkapan barang, atau detail penting lainnya" required 
+                    class="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-slate-800 text-sm font-normal bg-slate-50/50 focus:outline-none focus:border-sky-500 focus:bg-white transition-all resize-none"></textarea>
+                </div>
 
-            <div class="mb-8">
-                <label class="block text-sm text-gray-600 mb-1">Upload Gambar</label>
-                <input type="file" name="image" accept="image/*" required
-                class="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-sky-50 file:text-sky-700 hover:file:bg-sky-100 cursor-pointer">
-            </div>
+                <div>
+                    <label class="block mb-1 text-slate-400 font-medium">Foto Barang</label>
+                    <div class="border border-dashed border-slate-200 rounded-xl p-4 bg-slate-50/50 flex flex-col items-center justify-center gap-2">
+                        <input type="file" name="image" accept="image/*" required 
+                        class="text-xs text-slate-400 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border file:border-slate-200 file:text-xs file:bg-white file:text-slate-700 hover:file:bg-slate-50 file:font-bold file:cursor-pointer">
+                        <p class="text-[10px] font-medium text-slate-400">file: JPG, JPEG, PNG, atau WEBP.</p>
+                    </div>
+                </div>
 
-            <div class="flex gap-3">
-                <a href="produk.php"
-                class="w-full text-center border bg-gray-100 border-gray-300 text-gray-600 py-2 rounded-lg hover:bg-gray-300 transition-all font-semibold">
-                    Batal
-                </a>
-                <button type="submit"
-                class="w-full bg-sky-500 text-white py-2 rounded-lg hover:bg-sky-600 transition-all font-semibold cursor-pointer">
-                    Tambah Produk
-                </button>
-            </div>
-        </form>
-    </div>
+                <div class="pt-4 border-t border-slate-100 flex justify-end gap-3">
+                    <a href="produk.php" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold rounded-xl text-center transition-all">
+                        Batalkan
+                    </a>
+                    <button type="submit" class="px-5 py-2 bg-sky-600 hover:bg-sky-700 text-white font-bold rounded-xl transition-all shadow-md shadow-sky-600/10 cursor-pointer">
+                        Simpan Perubahan
+                    </button>
+                </div>
+
+            </form>
+        </div>
+    </main>
+
+    <?php include 'components/footer.php'; ?>
+
 </body>
 </html>

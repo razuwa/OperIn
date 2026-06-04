@@ -1,7 +1,7 @@
 <?php
 session_start();
 require 'require/koneksi.php';
-require 'needLogin.php';
+require 'needLogin.php'; 
 
 $user_id = $_SESSION['user_id'];
 $error_msg = $_GET['error'] ?? '';
@@ -12,8 +12,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_profile'])) {
     $nama = mysqli_real_escape_string($koneksi, $_POST['nama']);
     $email = mysqli_real_escape_string($koneksi, $_POST['email']);
     $whatsapp_raw = trim($_POST['whatsapp']);
+    $faculty_id = (int)$_POST['faculty_id'];
 
-    //whatsapp
+    // convert whatsapp
     $whatsapp = preg_replace('/[^0-9]/', '', $whatsapp_raw);
     if (str_starts_with($whatsapp, '08')) {
         $whatsapp = '62' . substr($whatsapp, 1);
@@ -21,14 +22,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_profile'])) {
         $whatsapp = '62' . $whatsapp;
     }
 
-    //validasi email
+    // validasi duplikasi email
     $cek_email = mysqli_query($koneksi, "SELECT id FROM users WHERE email = '$email' AND id != $user_id");
     if (mysqli_num_rows($cek_email) > 0) {
         header("Location: profil.php?error=" . urlencode("Email sudah digunakan oleh mahasiswa lain."));
         exit();
     }
 
-    $query_update = "UPDATE users SET nama='$nama', email='$email', whatsapp='$whatsapp' WHERE id=$user_id";
+    $query_update = "UPDATE users SET nama='$nama', email='$email', whatsapp='$whatsapp', faculty_id=$faculty_id WHERE id=$user_id";
     
     if (mysqli_query($koneksi, $query_update)) {
         $_SESSION['user_name'] = $nama;
@@ -40,7 +41,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_profile'])) {
     }
 }
 
-// data user saat ini
+// user saat ini
 $query_user = "SELECT u.*, f.nama_fakultas AS fakultas 
                FROM users u 
                LEFT JOIN faculties f ON u.faculty_id = f.id 
@@ -48,8 +49,11 @@ $query_user = "SELECT u.*, f.nama_fakultas AS fakultas
 $result_user = mysqli_query($koneksi, $query_user);
 $u = mysqli_fetch_assoc($result_user);
 
-// statistik user
+// statisik user
 $total_produk_saya = mysqli_fetch_assoc(mysqli_query($koneksi, "SELECT COUNT(*) AS total FROM products WHERE user_id = $user_id"))['total'];
+
+//dropdown
+$result_faculties = mysqli_query($koneksi, "SELECT * FROM faculties ORDER BY nama_fakultas ASC");
 ?>
 
 <!DOCTYPE html>
@@ -75,7 +79,7 @@ $total_produk_saya = mysqli_fetch_assoc(mysqli_query($koneksi, "SELECT COUNT(*) 
             </p>
             <a href="produk.php" class="inline-flex items-center gap-1 text-xs font-bold text-slate-500 hover:text-slate-800 transition-colors cursor-pointer">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
-                Kembali ke Home
+                Kembali
             </a>
         </div>
 
@@ -112,7 +116,7 @@ $total_produk_saya = mysqli_fetch_assoc(mysqli_query($koneksi, "SELECT COUNT(*) 
                     <div class="w-px h-8 bg-slate-200 my-auto"></div>
                     <div>
                         <p class="text-xs font-bold text-slate-400">Etalase Saya</p>
-                        <a href="kelolaProduk.php" class="inline-block text-xs font-bold text-sky-500 hover:text-orange-500 transition-colors mt-1">Kelola Produk </a>
+                        <a href="kelolaProduk.php" class="inline-block text-xs font-bold text-sky-500 hover:text-orange-500 transition-colors mt-1">Kelola Profil </a>
                     </div>
                 </div>
             </div>
@@ -138,6 +142,18 @@ $total_produk_saya = mysqli_fetch_assoc(mysqli_query($koneksi, "SELECT COUNT(*) 
                             <input type="text" name="whatsapp" value="<?= htmlspecialchars($u['whatsapp']) ?>" required 
                             class="w-full border border-slate-200 rounded-lg px-3 py-2 text-slate-800 text-sm focus:outline-none focus:border-sky-500 bg-slate-50/50">
                         </div>
+                    </div>
+
+                    <div>
+                        <label class="block mb-1 text-slate-500">Fakultas / Lokasi Pertemuan Default</label>
+                        <select name="faculty_id" required 
+                        class="w-full border border-slate-200 rounded-lg px-3 py-2 text-slate-800 text-sm focus:outline-none focus:border-sky-500 bg-white cursor-pointer">
+                            <?php while ($f = mysqli_fetch_assoc($result_faculties)) : ?>
+                                <option value="<?= $f['id'] ?>" <?= $u['faculty_id'] == $f['id'] ? 'selected' : '' ?>>
+                                    <?= htmlspecialchars($f['nama_fakultas']) ?>
+                                </option>
+                            <?php endwhile; ?>
+                        </select>
                     </div>
 
                     <div class="pt-2 flex justify-end">
