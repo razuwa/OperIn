@@ -4,6 +4,9 @@ require 'require/koneksi.php';
 
 $id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
 
+// Menentukan status login user
+$is_logged_in = isset($_SESSION['is_logged_in']) && $_SESSION['is_logged_in'] === true;
+
 $query = "SELECT p.*, f.nama_fakultas AS fakultas, u.nama AS nama_penjual, u.whatsapp, c.nama_kategori AS kategori
           FROM products p
           JOIN faculties f ON p.faculty_id = f.id
@@ -19,6 +22,14 @@ if (!$result || mysqli_num_rows($result) === 0) {
 }
 
 $p = mysqli_fetch_assoc($result);
+
+// KONDISIONAL URL: Tentukan arah link berdasarkan status login
+if ($is_logged_in) {
+    $button_url = "https://wa.me/" . $p['whatsapp'] . "?text=" . urlencode("Halo " . $p['nama_penjual'] . ", saya tertarik dengan produk " . $p['name'] . " di OperIn.");
+} else {
+    // Melempar ke login.php jika belum login
+    $button_url = "login.php?error=" . urlencode("Silakan login terlebih dahulu untuk menghubungi penjual.");
+}
 ?>
 
 <!DOCTYPE html>
@@ -82,8 +93,8 @@ $p = mysqli_fetch_assoc($result);
                 </div>
 
                 <div class="flex gap-3 mt-8">
-                    <a href="https://wa.me/<?= $p['whatsapp'] ?>?text=Halo%20<?= urlencode($p['nama_penjual']) ?>%2C%20saya%20tertarik%20dengan%20produk%20<?= urlencode($p['name']) ?>%20di%20OperIn." 
-                       target="_blank"
+                    <a href="<?= $button_url ?>" 
+                       <?= $is_logged_in ? 'target="_blank"' : '' ?>
                        class="px-6 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-all font-semibold flex items-center gap-2">
                         Hubungi Penjual via WhatsApp
                     </a>
