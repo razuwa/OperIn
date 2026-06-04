@@ -33,6 +33,10 @@
                                 <a href="dashboardAdmin.php" class="block px-4 py-2 text-xs font-semibold text-gray-700 hover:bg-gray-50 transition-colors">
                                     Dashboard Admin
                                 </a>
+                            <?php elseif ($_SESSION['role'] === 'mahasiswa') : ?>
+                                <a href="profil.php" class="block px-4 py-2 text-xs font-semibold text-gray-700 hover:bg-gray-50 transition-colors">
+                                    Profil Saya
+                                </a>
                             <?php endif; ?>
                             
                             <hr class="border-gray-100 my-1">
