@@ -3,7 +3,7 @@ session_start();
 require 'require/koneksi.php'; 
 
 if (!isset($_SESSION['is_logged_in']) || $_SESSION['is_logged_in'] !== true || ($_SESSION['role'] ?? '') !== 'admin') {
-    header("Location: login.php?error=" . urlencode("Akses Ditolak"));
+    header("Location: login.php?error=" . urlencode("Silakan Login Terlebih Dahulu"));
     exit();
 }
 
