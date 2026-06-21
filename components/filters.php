@@ -3,10 +3,11 @@
 $filter_cat_query = mysqli_query($koneksi, "SELECT * FROM categories ORDER BY nama_kategori ASC");
 $filter_fac_query = mysqli_query($koneksi, "SELECT * FROM faculties ORDER BY nama_fakultas ASC");
 
-// Tangkap status URL saat ini agar form mengingat pilihan terakhir mahasiswa (Auto-Select)
+// tangkap status URL
 $current_sort = $_GET['sort'] ?? '';
 $current_cat = $_GET['category'] ?? '';
 $current_fac = $_GET['faculty'] ?? '';
+$current_kondisi = $_GET['kondisi'] ?? '';
 $current_min = $_GET['min_price'] ?? '';
 $current_max = $_GET['max_price'] ?? '';
 ?>
@@ -15,23 +16,19 @@ $current_max = $_GET['max_price'] ?? '';
     <div class="max-w-7xl w-full flex justify-end px-4 md:px-6">
         
         <div class="relative inline-block text-left">
-            
             <button onclick="toggleFilter('main-filter')" class="bg-white border border-slate-300 text-slate-700 hover:border-sky-500 hover:text-sky-600 px-4 py-2.5 rounded-xl text-xs font-bold shadow-xs transition-all flex items-center justify-center gap-2 cursor-pointer">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"></path></svg>
                 Filter
             </button>
 
             <div id="main-filter" class="hidden absolute right-0 mt-3 w-[320px] md:w-[400px] bg-white rounded-2xl shadow-2xl border border-slate-200 z-50 overflow-hidden">
-                
                 <div class="bg-slate-50 border-b border-slate-100 px-5 py-3 flex justify-between items-center">
-                    <!-- <h4 class="text-xs font-extrabold text-slate-700 uppercase tracking-wider">Saring Pencarian</h4> -->
                     <button onclick="toggleFilter('main-filter')" class="text-slate-400 hover:text-red-500 cursor-pointer transition-colors">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
                     </button>
                 </div>
 
                 <form action="fullProduk.php" method="GET" class="p-5 space-y-4 text-left">
-                    
                     <?php if(isset($_GET['search'])) echo '<input type="hidden" name="search" value="'.htmlspecialchars($_GET['search']).'">'; ?>
 
                     <div class="grid grid-cols-2 gap-3">
@@ -54,14 +51,24 @@ $current_max = $_GET['max_price'] ?? '';
                         </div>
                     </div>
 
-                    <div>
-                        <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Lokasi COD (Fakultas)</label>
-                        <select name="faculty" class="w-full border border-slate-200 rounded-lg p-2.5 text-xs bg-slate-50 focus:outline-none focus:border-sky-500 text-slate-700">
-                            <option value="">Semua Lokasi Kampus</option>
-                            <?php while ($f = mysqli_fetch_assoc($filter_fac_query)) : ?>
-                                <option value="<?= $f['id'] ?>" <?= $current_fac == $f['id'] ? 'selected' : '' ?>><?= htmlspecialchars($f['nama_fakultas']) ?></option>
-                            <?php endwhile; ?>
-                        </select>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Lokasi (COD)</label>
+                            <select name="faculty" class="w-full border border-slate-200 rounded-lg p-2.5 text-xs bg-slate-50 focus:outline-none focus:border-sky-500 text-slate-700">
+                                <option value="">Semua Lokasi</option>
+                                <?php while ($f = mysqli_fetch_assoc($filter_fac_query)) : ?>
+                                    <option value="<?= $f['id'] ?>" <?= $current_fac == $f['id'] ? 'selected' : '' ?>><?= htmlspecialchars($f['nama_fakultas']) ?></option>
+                                <?php endwhile; ?>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Kondisi</label>
+                            <select name="kondisi" class="w-full border border-slate-200 rounded-lg p-2.5 text-xs bg-slate-50 focus:outline-none focus:border-sky-500 text-slate-700">
+                                <option value="">Semua Kondisi</option>
+                                <option value="Baru" <?= $current_kondisi == 'Baru' ? 'selected' : '' ?>>Baru</option>
+                                <option value="Bekas" <?= $current_kondisi == 'Bekas' ? 'selected' : '' ?>>Bekas</option>
+                            </select>
+                        </div>
                     </div>
 
                     <div class="grid grid-cols-2 gap-3">
@@ -82,7 +89,6 @@ $current_max = $_GET['max_price'] ?? '';
                 </form>
             </div>
         </div>
-
     </div>
 </div>
 
@@ -90,7 +96,6 @@ $current_max = $_GET['max_price'] ?? '';
     function toggleFilter(id) {
         document.getElementById(id).classList.toggle('hidden');
     }
-    
     document.addEventListener('click', (e) => {
         const dropdown = document.getElementById('main-filter');
         const button = e.target.closest('button[onclick="toggleFilter(\'main-filter\')"]');

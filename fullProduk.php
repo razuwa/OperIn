@@ -127,7 +127,7 @@ if ($result) {
                                 <?= htmlspecialchars($p['name']) ?>
                             </p>
                             <div class="space-y-1">
-                                <p class="text-base font-extrabold text-slate-900 tracking-tight">
+                                <p class="text-base font-bold text-slate-900 tracking-tight">
                                     Rp<?= number_format($p['price'], 0, ',', '.') ?>
                                 </p>
                                 <div class="flex justify-between items-center text-[11px] pt-1.5 border-t border-slate-100">
