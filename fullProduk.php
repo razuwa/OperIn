@@ -6,6 +6,7 @@ require 'require/koneksi.php';
 $search = $_GET['search'] ?? '';
 $category = $_GET['category'] ?? '';
 $faculty = $_GET['faculty'] ?? '';
+$kondisi = $_GET['kondisi'] ?? ''; 
 $min_price = $_GET['min_price'] ?? '';
 $max_price = $_GET['max_price'] ?? '';
 $sort = $_GET['sort'] ?? '';
@@ -18,7 +19,7 @@ $offset = ($page - 1) * $limit;
 
 // query dasar
 $base_query = "SELECT p.*, f.nama_fakultas AS fakultas FROM products p ";
-$count_query = "SELECT COUNT(*) AS total FROM products p "; 
+$count_query = "SELECT COUNT(*) AS total FROM products p ";
 
 $join_faculty = " JOIN faculties f ON p.faculty_id = f.id ";
 $base_query .= $join_faculty;
@@ -27,53 +28,58 @@ $count_query .= $join_faculty;
 // kondisi where untuk filtering
 $where_clauses = [];
 
-if (!empty($search)) {
-    $where_clauses[] = "p.name LIKE '%" . mysqli_real_escape_string($koneksi, $search) . "%'";
-}
-if (!empty($category)) {
-    $where_clauses[] = "p.category_id = " . (int)$category;
-}
-if (!empty($faculty)) {
-    $where_clauses[] = "p.faculty_id = " . (int)$faculty;
-}
-if (!empty($min_price)) {
-    $where_clauses[] = "p.price >= " . (int)$min_price;
-}
-if (!empty($max_price)) {
-    $where_clauses[] = "p.price <= " . (int)$max_price;
-}
+if (!empty($search)) $where_clauses[] = "p.name LIKE '%" . mysqli_real_escape_string($koneksi, $search) . "%'";
+if (!empty($category)) $where_clauses[] = "p.category_id = " . (int)$category;
+if (!empty($faculty)) $where_clauses[] = "p.faculty_id = " . (int)$faculty;
+if (!empty($kondisi)) $where_clauses[] = "p.kondisi = '" . mysqli_real_escape_string($koneksi, $kondisi) . "'";
+if (!empty($min_price)) $where_clauses[] = "p.price >= " . (int)$min_price;
+if (!empty($max_price)) $where_clauses[] = "p.price <= " . (int)$max_price;
 
-// jika ada filter yang aktif 
 if (!empty($where_clauses)) {
     $where_sql = " WHERE " . implode(" AND ", $where_clauses);
     $base_query .= $where_sql;
     $count_query .= $where_sql;
 }
 
-// total halaman untuk page filter
-$total_result = mysqli_query($koneksi, $count_query);
-$total_data = mysqli_fetch_assoc($total_result)['total'];
-$total_pages = ceil($total_data / $limit);
+// 5. RAKIT URUTAN (SORTING)
+if ($sort === 'termurah') $base_query .= " ORDER BY p.price ASC";
+elseif ($sort === 'termahal') $base_query .= " ORDER BY p.price DESC";
+else $base_query .= " ORDER BY p.id DESC"; 
 
-// sorting
-if ($sort === 'termurah') {
-    $base_query .= " ORDER BY p.price ASC";
-} elseif ($sort === 'termahal') {
-    $base_query .= " ORDER BY p.price DESC";
-} else {
-    $base_query .= " ORDER BY p.id DESC"; 
-}
-
-// Tambahkan limitasi data per halaman dan eksekusi
+// Eksekusi data produk
 $base_query .= " LIMIT $limit OFFSET $offset";
 $result = mysqli_query($koneksi, $base_query);
-
 $products = [];
 if ($result) {
     while ($row = mysqli_fetch_assoc($result)) {
         $products[] = $row;
     }
 }
+
+// Eksekusi total data
+$total_result = mysqli_query($koneksi, $count_query);
+$total_data = mysqli_fetch_assoc($total_result)['total'];
+$total_pages = ceil($total_data / $limit);
+
+// 6. AMBIL NAMA TEKS UNTUK LABEL FILTER AKTIF
+$active_filters = [];
+if (!empty($search)) $active_filters[] = "Pencarian: " . $search;
+if (!empty($category)) {
+    $q_cat = mysqli_query($koneksi, "SELECT nama_kategori FROM categories WHERE id = " . (int)$category);
+    if ($r = mysqli_fetch_assoc($q_cat)) $active_filters[] = "Kategori: " . $r['nama_kategori'];
+}
+if (!empty($faculty)) {
+    $q_fac = mysqli_query($koneksi, "SELECT nama_fakultas FROM faculties WHERE id = " . (int)$faculty);
+    if ($r = mysqli_fetch_assoc($q_fac)) $active_filters[] = "Lokasi: " . $r['nama_fakultas'];
+}
+if (!empty($kondisi)) $active_filters[] = "Kondisi: " . $kondisi;
+if (!empty($min_price) || !empty($max_price)) {
+    $p_min = !empty($min_price) ? "Rp" . number_format($min_price,0,',','.') : "Rp0";
+    $p_max = !empty($max_price) ? "Rp" . number_format($max_price,0,',','.') : "Tak terhingga";
+    $active_filters[] = "Harga: $p_min - $p_max";
+}
+if ($sort === 'termurah') $active_filters[] = "Urutan: Termurah";
+elseif ($sort === 'termahal') $active_filters[] = "Urutan: Termahal";
 ?>
 
 <!DOCTYPE html>
@@ -96,7 +102,7 @@ if ($result) {
     <?php include 'components/navbar.php'; ?>
     <?php include 'components/filters.php'; ?>
 
-    <main class="max-w-7xl mx-auto px-4 md:px-6 w-full py-8 space-y-6 flex-1">
+    <main class="max-w-7xl mx-auto px-4 md:px-6 w-full py-6 space-y-6 flex-1">
         
         <div class="flex items-end justify-between border-b border-slate-200 pb-3">
             <div>
@@ -108,6 +114,20 @@ if ($result) {
             <a href="produk.php" class="text-xs font-bold text-sky-600 hover:text-orange-500 transition-colors shrink-0">← Beranda Utama</a>
         </div>
 
+        <?php if (!empty($active_filters)): ?>
+            <div class="flex flex-wrap items-center gap-2">
+                <span class="text-xs text-slate-500 font-medium mr-1">Filter Aktif:</span>
+                <?php foreach ($active_filters as $af): ?>
+                    <span class="bg-sky-100 border border-sky-200 text-sky-700 text-[10px] font-bold px-2.5 py-1 rounded-lg">
+                        <?= htmlspecialchars($af) ?>
+                    </span>
+                <?php endforeach; ?>
+                <a href="fullProduk.php" class="text-[10px] font-bold text-red-500 hover:text-red-700 underline ml-2 transition-colors">
+                    Reset Filter
+                </a>
+            </div>
+        <?php endif; ?>
+
         <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-5">
             <?php if (empty($products)): ?>
                 <div class="col-span-full bg-white border border-dashed border-slate-300 text-center p-12 rounded-xl text-xs text-slate-400 font-medium">
@@ -116,12 +136,10 @@ if ($result) {
             <?php else: ?>
                 <?php foreach ($products as $p) : ?>
                 <a href="detailProduk.php?id=<?= $p['id'] ?>" class="group block h-full">
-                    <div class="bg-white border border-slate-200/70 rounded-xl shadow-xs overflow-hidden hover:shadow-lg hover:-translate-y-1 transition-all duration-300 h-full flex flex-col relative">
-                        
+                    <div class="bg-white border border-slate-200/70 rounded-xl shadow-xs overflow-hidden hover:shadow-lg hover:-translate-y-1 transition-all duration-300 h-full flex flex-col">
                         <div class="w-full aspect-square bg-slate-50 overflow-hidden shrink-0">
                             <img src="<?= htmlspecialchars($p['image']) ?>" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
                         </div>
-                        
                         <div class="p-3 flex-1 flex flex-col justify-between space-y-2">
                             <p class="text-sm font-semibold text-slate-800 line-clamp-2 leading-snug group-hover:text-sky-600 transition-colors">
                                 <?= htmlspecialchars($p['name']) ?>
@@ -155,18 +173,15 @@ if ($result) {
                     return '?' . http_build_query($params);
                 }
             ?>
-            
             <?php if ($page > 1): ?>
                 <a href="fullProduk.php<?= getPageUrl($page - 1) ?>" class="px-3 py-1.5 bg-white text-slate-700 border border-slate-200 rounded-lg text-xs font-bold hover:bg-slate-100 transition-colors">Prev</a>
             <?php endif; ?>
-
             <?php for ($i = 1; $i <= $total_pages; $i++): ?>
                 <a href="fullProduk.php<?= getPageUrl($i) ?>" 
                    class="px-3 py-1.5 rounded-lg text-xs font-bold transition-colors <?= $i === $page ? 'bg-sky-600 text-white shadow-xs' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50' ?>">
                     <?= $i ?>
                 </a>
             <?php endfor; ?>
-
             <?php if ($page < $total_pages): ?>
                 <a href="fullProduk.php<?= getPageUrl($page + 1) ?>" class="px-3 py-1.5 bg-white text-slate-700 border border-slate-200 rounded-lg text-xs font-bold hover:bg-slate-100 transition-colors">Next</a>
             <?php endif; ?>
