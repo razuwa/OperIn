@@ -17,18 +17,20 @@
             </a>
 
             <p class="text-[10px] font-bold uppercase tracking-wider text-sky-200/60 px-4 pt-4 mb-2">Promosi</p>
-            <div class="flex items-center gap-3 px-4 py-2.5 text-sky-200/40 bg-sky-700/20 rounded-xl text-sm cursor-not-allowed select-none">
-                <span>Produk Dipromosikan</span>
-            </div>
-            <div class="flex items-center gap-3 px-4 py-2.5 text-sky-200/40 bg-sky-700/20 rounded-xl text-sm cursor-not-allowed select-none">
-                <span>Menunggu Persetujuan</span>
-            </div>
+            <a href="kelolaPromo.php" class="flex items-center gap-3 px-4 py-2.5 text-sky-100 hover:bg-sky-500/50 rounded-xl transition-all text-sm">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z"></path></svg>
+                Produk Dipromosikan
+            </a>
+            <a href="kelolaPromo.php" class="flex items-center gap-3 px-4 py-2.5 text-sky-100 hover:bg-sky-500/50 rounded-xl transition-all text-sm">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                Menunggu Persetujuan
+            </a>
 
             <p class="text-[10px] font-bold uppercase tracking-wider text-sky-200/60 px-4 pt-4 mb-2">Pengguna</p>
-            <div class="flex items-center gap-3 px-4 py-2.5 text-sky-200/40 bg-sky-700/20 rounded-xl text-sm cursor-not-allowed select-none">
-                <svg class="w-5 h-5 opacity-40" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
+            <a href="kelolaUser.php" class="flex items-center gap-3 px-4 py-2.5 text-sky-100 hover:bg-sky-500/50 rounded-xl transition-all text-sm">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
                 Manajemen User
-            </div>
+            </a>
         </nav>
     </div>
 
