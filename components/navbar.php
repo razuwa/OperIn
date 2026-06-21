@@ -49,7 +49,7 @@
                 </div>
                 </div>
 
-            <form action="produk.php" method="GET" class="w-full md:w-auto md:flex-1 max-w-2xl order-3 md:order-2">
+            <form action="fullProduk.php" method="GET" class="w-full md:w-auto md:flex-1 max-w-2xl order-3 md:order-2">
                 <div class="flex w-full">
                     <input type="text" name="search" id="search" placeholder="Cari Barang..." 
                     value="<?= htmlspecialchars($_GET['search'] ?? '') ?>"
