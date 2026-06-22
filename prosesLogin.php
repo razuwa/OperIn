@@ -15,7 +15,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         // verifikasi password
         if (password_verify($password, $user['password'])) {
-            
+
+        // Cek jika akun berstatus banned
+        if ($user['status'] === 'banned') {
+            header("Location: login.php?error=" . urlencode("Akun Anda telah ditangguhkan oleh Admin."));
+            exit();
+            }
             unset($_SESSION['old_login_email']);
 
             // simpan sesi
