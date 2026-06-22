@@ -5,6 +5,7 @@ require 'require/koneksi.php';
 $id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
 $is_logged_in = isset($_SESSION['is_logged_in']) && $_SESSION['is_logged_in'] === true;
 
+// Query mengambil data produk beserta data relasi
 $query = "SELECT p.*, f.nama_fakultas AS fakultas, u.nama AS nama_penjual, u.whatsapp, c.nama_kategori AS kategori
           FROM products p
           JOIN faculties f ON p.faculty_id = f.id
@@ -68,9 +69,10 @@ if ($is_logged_in) {
                 
                 <div class="bg-white p-6 rounded-2xl border border-slate-200/60 shadow-xs space-y-4">
                     <div class="space-y-1">
-                        <span class="inline-block bg-sky-50 text-sky-600 text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md border border-sky-100">
+                        <a href="fullProduk.php?category=<?= $p['category_id'] ?>" 
+                           class="inline-block bg-sky-50 text-sky-600 hover:bg-sky-500 hover:text-white transition-colors cursor-pointer text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md border border-sky-100">
                             <?= htmlspecialchars($p['kategori']) ?>
-                        </span>
+                        </a>
                         <h1 class="text-xl md:text-2xl font-bold text-slate-900 tracking-tight"><?= htmlspecialchars($p['name']) ?></h1>
                     </div>
 
@@ -81,14 +83,18 @@ if ($is_logged_in) {
                     <div class="flex items-center gap-3 pt-2 border-t border-slate-100 text-xs text-slate-500">
                         <div class="flex items-center gap-1">
                             <span class="font-medium text-slate-400">Kondisi:</span>
-                            <span class="px-2 py-0.5 font-bold rounded-md <?= $p['kondisi'] === 'Baru' ? 'bg-emerald-50 text-emerald-700 border border-emerald-100' : 'bg-slate-100 text-slate-700 border border-slate-200' ?> border">
+                            <a href="fullProduk.php?kondisi=<?= urlencode($p['kondisi']) ?>" 
+                               class="px-2 py-0.5 font-bold rounded-md cursor-pointer transition-colors border <?= $p['kondisi'] === 'Baru' ? 'bg-emerald-50 text-emerald-700 border-emerald-100 hover:bg-emerald-600 hover:text-white' : 'bg-slate-100 text-slate-700 border-slate-200 hover:bg-slate-600 hover:text-white' ?>">
                                 <?= htmlspecialchars($p['kondisi']) ?>
-                            </span>
+                            </a>
                         </div>
                         <div class="w-px h-4 bg-slate-200"></div>
                         <div class="flex items-center gap-1">
                             <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
-                            <span class="font-medium text-slate-700"><?= htmlspecialchars($p['fakultas']) ?></span>
+                            <a href="fullProduk.php?faculty=<?= $p['faculty_id'] ?>" 
+                               class="font-medium text-slate-700 hover:text-sky-600 transition-colors border-b border-dashed border-slate-400 hover:border-sky-600 cursor-pointer">
+                                <?= htmlspecialchars($p['fakultas']) ?>
+                            </a>
                         </div>
                     </div>
                 </div>
@@ -123,5 +129,6 @@ if ($is_logged_in) {
         </div>
     </main>
 
+    <?php include 'components/footer.php'; ?>
 </body>
 </html>
