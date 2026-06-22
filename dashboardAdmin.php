@@ -212,7 +212,6 @@ $result_tabel = mysqli_query($koneksi, $query_tabel);
             <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
                 <div class="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
                     <h2 class="font-bold text-lg text-gray-800">Daftar Produk Etalase</h2>
-                    <span class="text-xs font-semibold bg-gray-200 text-gray-600 px-2.5 py-1 rounded-md">Mode Moderasi</span>
                 </div>
                 
                 <div class="overflow-x-auto">
