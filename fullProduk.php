@@ -2,7 +2,6 @@
 session_start();
 require 'require/koneksi.php';
 
-// tangkap parameter dari navbar dan filter: Kategori, Sort, Fakultas, Harga
 $search = $_GET['search'] ?? '';
 $category = $_GET['category'] ?? '';
 $faculty = $_GET['faculty'] ?? '';
@@ -11,13 +10,11 @@ $min_price = $_GET['min_price'] ?? '';
 $max_price = $_GET['max_price'] ?? '';
 $sort = $_GET['sort'] ?? '';
 
-// setup limit halaman
 $limit = 20;
 $page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
 if ($page < 1) { $page = 1; }
 $offset = ($page - 1) * $limit;
 
-// query dasar
 $base_query = "SELECT p.*, f.nama_fakultas AS fakultas FROM products p ";
 $count_query = "SELECT COUNT(*) AS total FROM products p ";
 
@@ -25,8 +22,8 @@ $join_faculty = " JOIN faculties f ON p.faculty_id = f.id ";
 $base_query .= $join_faculty;
 $count_query .= $join_faculty;
 
-// kondisi where untuk filtering
-$where_clauses = [];
+// PERBAIKAN: Suntikkan filter status 'tersedia' sebagai kondisi wajib mutlak
+$where_clauses = ["p.status_barang = 'tersedia'"];
 
 if (!empty($search)) $where_clauses[] = "p.name LIKE '%" . mysqli_real_escape_string($koneksi, $search) . "%'";
 if (!empty($category)) $where_clauses[] = "p.category_id = " . (int)$category;
@@ -41,12 +38,10 @@ if (!empty($where_clauses)) {
     $count_query .= $where_sql;
 }
 
-// 5. RAKIT URUTAN (SORTING)
 if ($sort === 'termurah') $base_query .= " ORDER BY p.price ASC";
 elseif ($sort === 'termahal') $base_query .= " ORDER BY p.price DESC";
 else $base_query .= " ORDER BY p.id DESC"; 
 
-// Eksekusi data produk
 $base_query .= " LIMIT $limit OFFSET $offset";
 $result = mysqli_query($koneksi, $base_query);
 $products = [];
@@ -56,12 +51,10 @@ if ($result) {
     }
 }
 
-// Eksekusi total data
 $total_result = mysqli_query($koneksi, $count_query);
 $total_data = mysqli_fetch_assoc($total_result)['total'];
 $total_pages = ceil($total_data / $limit);
 
-// 6. AMBIL NAMA TEKS UNTUK LABEL FILTER AKTIF
 $active_filters = [];
 if (!empty($search)) $active_filters[] = "Pencarian: " . $search;
 if (!empty($category)) {
@@ -166,7 +159,6 @@ elseif ($sort === 'termahal') $active_filters[] = "Urutan: Termahal";
         <?php if ($total_pages > 1): ?>
         <div class="flex justify-center items-center gap-1.5 pt-8">
             <?php 
-                // untuk mempertahankan filter yang aktif saat pindah halaman
                 function getPageUrl($pageNum) {
                     $params = $_GET;
                     $params['page'] = $pageNum;

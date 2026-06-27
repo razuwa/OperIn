@@ -7,13 +7,14 @@ $user_id = $_SESSION['user_id'];
 $error_msg = $_GET['error'] ?? '';
 $success_msg = $_GET['success'] ?? '';
 
-// hapus produk
+// 1. AKSI: HAPUS PRODUK (SOFT DELETE)
 if (isset($_GET['action']) && $_GET['action'] === 'delete' && isset($_GET['id'])) {
     $delete_id = (int)$_GET['id'];
-    $query_delete = "DELETE FROM products WHERE id = $delete_id AND user_id = $user_id";
+    // REVISI: Mengubah DELETE menjadi UPDATE status_barang
+    $query_delete = "UPDATE products SET status_barang = 'dihapus' WHERE id = $delete_id AND user_id = $user_id";
     
     if (mysqli_query($koneksi, $query_delete)) {
-        header("Location: kelolaProduk.php?success=" . urlencode("Barang berhasil dihapus."));
+        header("Location: kelolaProduk.php?success=" . urlencode("Barang berhasil dihapus dari etalase."));
         exit();
     } else {
         header("Location: kelolaProduk.php?error=" . urlencode("Gagal menghapus barang: " . mysqli_error($koneksi)));
@@ -21,7 +22,21 @@ if (isset($_GET['action']) && $_GET['action'] === 'delete' && isset($_GET['id'])
     }
 }
 
-// savve changes edit
+// 2. AKSI: TANDAI TERJUAL
+if (isset($_GET['action']) && $_GET['action'] === 'terjual' && isset($_GET['id'])) {
+    $terjual_id = (int)$_GET['id'];
+    $query_terjual = "UPDATE products SET status_barang = 'terjual' WHERE id = $terjual_id AND user_id = $user_id";
+    
+    if (mysqli_query($koneksi, $query_terjual)) {
+        header("Location: kelolaProduk.php?success=" . urlencode("Selamat! Status barang diubah menjadi Terjual."));
+        exit();
+    } else {
+        header("Location: kelolaProduk.php?error=" . urlencode("Gagal merubah status: " . mysqli_error($koneksi)));
+        exit();
+    }
+}
+
+// 3. AKSI: SIMPAN PERUBAHAN EDIT
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_product'])) {
     $product_id = (int)$_POST['product_id'];
     $name = mysqli_real_escape_string($koneksi, $_POST['name']);
@@ -40,13 +55,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_product'])) {
         $folder_destination = "assets/" . $new_file_name;
 
         if (move_uploaded_file($tmp_name, $folder_destination)) {
-            $query_update = "UPDATE products SET name='$name', price=$price, category_id=$category_id, faculty_id=$faculty_id, kondisi='$kondisi', description='$description', image='$folder_destination' WHERE id=$product_id AND user_id=$user_id";
+            $query_update = "UPDATE products SET name='$name', price=$price, category_id=$category_id, faculty_id=$faculty_id, kondisi='$kondisi', description='$description', image='$folder_destination' WHERE id=$product_id AND user_id=$user_id AND status_barang = 'tersedia'";
         } else {
             header("Location: kelolaProduk.php?error=" . urlencode("Gagal mengunggah gambar baru."));
             exit();
         }
     } else {
-        $query_update = "UPDATE products SET name='$name', price=$price, category_id=$category_id, faculty_id=$faculty_id, kondisi='$kondisi', description='$description' WHERE id=$product_id AND user_id=$user_id";
+        $query_update = "UPDATE products SET name='$name', price=$price, category_id=$category_id, faculty_id=$faculty_id, kondisi='$kondisi', description='$description' WHERE id=$product_id AND user_id=$user_id AND status_barang = 'tersedia'";
     }
 
     if (mysqli_query($koneksi, $query_update)) {
@@ -58,33 +73,32 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_product'])) {
     }
 }
 
-// ambil data untuk edit
+// 4. AMBIL DATA UNTUK MODE EDIT
 $edit_mode = false;
 $product_to_edit = [];
 if (isset($_GET['action']) && $_GET['action'] === 'edit' && isset($_GET['id'])) {
     $edit_id = (int)$_GET['id'];
-    $query_edit = "SELECT * FROM products WHERE id = $edit_id AND user_id = $user_id";
+    // REVISI: Pastikan barang yang bisa diedit HANYA yang berstatus 'tersedia'
+    $query_edit = "SELECT * FROM products WHERE id = $edit_id AND user_id = $user_id AND status_barang = 'tersedia'";
     $result_edit = mysqli_query($koneksi, $query_edit);
     if ($result_edit && mysqli_num_rows($result_edit) === 1) {
         $edit_mode = true;
         $product_to_edit = mysqli_fetch_assoc($result_edit);
+    } else {
+        $error_msg = "Barang tidak ditemukan atau sudah tidak dapat diedit karena laku/diblokir.";
     }
 }
 
-// query untuk dropdown
 $result_faculties = mysqli_query($koneksi, "SELECT * FROM faculties ORDER BY nama_fakultas ASC");
 $result_categories = mysqli_query($koneksi, "SELECT * FROM categories ORDER BY nama_kategori ASC"); 
 
-if (!$result_categories) {
-    die("Gagal memuat data master kategori: " . mysqli_error($koneksi));
-}
-
-// query tabel utama
+// 5. AMBIL DATA UNTUK TABEL LIST PRODUK
+// REVISI: Tambahkan kondisi agar barang yang berstatus 'dihapus' lenyap dari pandangan mahasiswa
 $query_tabel = "SELECT p.*, f.nama_fakultas AS fakultas, c.nama_kategori AS kategori 
                 FROM products p
                 JOIN faculties f ON p.faculty_id = f.id
                 JOIN categories c ON p.category_id = c.id
-                WHERE p.user_id = $user_id
+                WHERE p.user_id = $user_id AND p.status_barang != 'dihapus'
                 ORDER BY p.id DESC";
 $result_tabel = mysqli_query($koneksi, $query_tabel);
 ?>
@@ -101,14 +115,14 @@ $result_tabel = mysqli_query($koneksi, $query_tabel);
 
     <?php include 'components/navbar.php'; ?>
 
-    <main class="flex-1 max-w-4xl w-full mx-auto px-4 py-8">
+    <main class="flex-1 max-w-5xl w-full mx-auto px-4 py-8">
         
         <div class="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm space-y-6">
             
             <div class="flex justify-between items-center border-b border-gray-100 pb-4">
                 <div>
                     <h1 class="text-lg font-bold text-gray-800 tracking-tight">Daftar Produk Saya</h1>
-                    <p class="text-xs text-gray-500">Ubah informasi atau hapus produk milik Anda.</p>
+                    <p class="text-xs text-gray-500">Ubah status, edit informasi, atau hapus produk milik Anda.</p>
                 </div>
                 <a href="produk.php" class="text-xs font-semibold px-3 py-1.5 border border-gray-300 rounded-lg text-gray-600 hover:bg-gray-50 transition-all">
                     Kembali ke Etalase
@@ -194,47 +208,59 @@ $result_tabel = mysqli_query($koneksi, $query_tabel);
                             <th class="py-3 px-4">Kategori</th> 
                             <th class="py-3 px-4">Harga</th>
                             <th class="py-3 px-4 w-20">Kondisi</th>
-                            <th class="py-3 px-4">Lokasi COD</th>
-                            <th class="py-3 px-4 text-center w-40">Tindakan</th>
+                            <th class="py-3 px-4 text-center w-56">Tindakan</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-gray-200 text-gray-700">
                         <?php if (mysqli_num_rows($result_tabel) === 0) : ?>
                             <tr>
-                                <td colspan="7" class="text-center py-10 text-gray-400 font-medium">Anda belum pernah mengunggah produk.</td>
+                                <td colspan="6" class="text-center py-10 text-gray-400 font-medium">Anda belum pernah mengunggah produk.</td>
                             </tr>
                         <?php else : ?>
                             <?php while ($row = mysqli_fetch_assoc($result_tabel)) : ?>
-                                <tr class="hover:bg-gray-50/40 transition-colors">
-                                    <td class="py-2.5 px-4 text-center">
-                                        <img src="<?= htmlspecialchars($row['image']) ?>" class="w-8 h-8 object-cover rounded border border-gray-200 bg-white mx-auto">
+                                <tr class="hover:bg-gray-50/40 transition-colors <?= $row['status_barang'] !== 'tersedia' ? 'opacity-70' : '' ?>">
+                                    <td class="py-3 px-4 text-center">
+                                        <img src="<?= htmlspecialchars($row['image']) ?>" class="w-10 h-10 object-cover rounded-lg border border-gray-200 bg-white mx-auto">
                                     </td>
-                                    <td class="py-2.5 px-4 font-semibold text-slate-800"><?= htmlspecialchars($row['name']) ?></td>
-                                    <td class="py-2.5 px-4">
-                                        <span class="bg-sky-50 text-sky-600 border border-sky-200 px-2 py-0.5 rounded text-[11px] font-semibold">
+                                    <td class="py-3 px-4 font-bold text-slate-800">
+                                        <?= htmlspecialchars($row['name']) ?>
+                                        <?php if ($row['status_barang'] === 'terjual') : ?>
+                                            <span class="ml-2 bg-emerald-100 text-emerald-700 px-1.5 py-0.5 rounded text-[9px] font-bold uppercase">LAKU</span>
+                                        <?php elseif ($row['status_barang'] === 'diblokir') : ?>
+                                            <span class="ml-2 bg-red-100 text-red-700 px-1.5 py-0.5 rounded text-[9px] font-bold uppercase">DIBLOKIR</span>
+                                        <?php endif; ?>
+                                    </td>
+                                    <td class="py-3 px-4">
+                                        <span class="bg-sky-50 text-sky-600 border border-sky-200 px-2 py-1 rounded text-[10px] font-bold">
                                             <?= htmlspecialchars($row['kategori']) ?>
                                         </span>
                                     </td>
-                                    <td class="py-2.5 px-4 text-slate-900 font-medium">Rp<?= number_format($row['price'], 0, ',', '.') ?></td>
-                                    <td class="py-2.5 px-4">
-                                        <span class="px-1.5 py-0.5 rounded text-[10px] font-bold tracking-wide <?= $row['kondisi'] === 'Baru' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-gray-100 text-gray-700 border border-gray-300' ?> border">
+                                    <td class="py-3 px-4 text-slate-900 font-bold">Rp<?= number_format($row['price'], 0, ',', '.') ?></td>
+                                    <td class="py-3 px-4">
+                                        <span class="px-2 py-1 rounded text-[10px] font-bold <?= $row['kondisi'] === 'Baru' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-gray-100 text-gray-700 border border-gray-300' ?> border">
                                             <?= htmlspecialchars($row['kondisi']) ?>
                                         </span>
                                     </td>
-                                    <td class="py-2.5 px-4 text-gray-500"><?= htmlspecialchars($row['fakultas']) ?></td>
-                                    <td class="py-2.5 px-4">
-                                        <div class="flex items-center justify-center gap-2">
-                                            <a href="kelolaProduk.php?action=edit&id=<?= $row['id'] ?>" 
-                                               class="inline-block bg-white text-gray-700 border border-gray-300 px-2.5 py-1 rounded hover:bg-gray-100 transition-all font-semibold text-center whitespace-nowrap">
-                                                Edit
-                                            </a>
-                                            <a href="kelolaProduk.php?action=delete&id=<?= $row['id'] ?>" 
-                                               onclick="return confirm('Apakah Anda yakin ingin menghapus produk ini?')"
-                                               class="inline-block bg-white text-red-600 border border-red-200 px-2.5 py-1 rounded hover:bg-red-50 transition-all font-semibold text-center whitespace-nowrap">
-                                                Hapus
-                                            </a>
+                                    
+                                    <td class="py-3 px-4 text-center">
+                                        <div class="flex items-center justify-center gap-2.5 font-bold text-xs">
+                                            <?php if ($row['status_barang'] === 'tersedia') : ?>
+                                                <a href="kelolaProduk.php?action=edit&id=<?= $row['id'] ?>" class="text-sky-600 hover:underline">Edit</a>
+                                                <span class="text-slate-200">|</span>
+                                                <a href="kelolaProduk.php?action=terjual&id=<?= $row['id'] ?>" onclick="return confirm('Tandai barang ini sudah laku? Barang akan hilang dari etalase pencarian.')" class="text-emerald-600 hover:underline">Terjual</a>
+                                                <span class="text-slate-200">|</span>
+                                            <?php elseif ($row['status_barang'] === 'terjual') : ?>
+                                                <span class="text-slate-400 font-medium italic">Sudah Laku</span>
+                                                <span class="text-slate-200">|</span>
+                                            <?php elseif ($row['status_barang'] === 'diblokir') : ?>
+                                                <span class="text-red-400 font-medium italic">Diblokir Admin</span>
+                                                <span class="text-slate-200">|</span>
+                                            <?php endif; ?>
+                                            
+                                            <a href="kelolaProduk.php?action=delete&id=<?= $row['id'] ?>" onclick="return confirm('Hapus barang ini dari daftar lapak Anda?')" class="text-red-600 hover:underline">Hapus</a>
                                         </div>
                                     </td>
+                                    
                                 </tr>
                             <?php endwhile; ?>
                         <?php endif; ?>

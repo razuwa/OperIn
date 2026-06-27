@@ -10,16 +10,30 @@ if (!isset($_SESSION['is_logged_in']) || $_SESSION['is_logged_in'] !== true || (
 $error_msg = $_GET['error'] ?? '';
 $success_msg = $_GET['success'] ?? '';
 
-// hapus produk
-if (isset($_GET['action']) && $_GET['action'] === 'delete' && isset($_GET['id'])) {
-    $delete_id = (int)$_GET['id'];
-    $query_delete = "DELETE FROM products WHERE id = $delete_id";
-    if (mysqli_query($koneksi, $query_delete)) {
-        header("Location: dashboardAdmin.php?success=" . urlencode("Produk berhasil dihapus"));
-        exit();
-    } else {
-        header("Location: dashboardAdmin.php?error=" . urlencode("Gagal menghapus produk: " . mysqli_error($koneksi)));
-        exit();
+// PERBAIKAN AKSI: Hapus (Soft Delete) dan Takedown
+if (isset($_GET['action']) && isset($_GET['id'])) {
+    $action_id = (int)$_GET['id'];
+    
+    if ($_GET['action'] === 'delete') {
+        // Soft delete: ubah status jadi dihapus
+        $query_action = "UPDATE products SET status_barang = 'dihapus' WHERE id = $action_id";
+        if (mysqli_query($koneksi, $query_action)) {
+            header("Location: dashboardAdmin.php?success=" . urlencode("Produk berhasil dihapus (Soft Delete)"));
+            exit();
+        } else {
+            header("Location: dashboardAdmin.php?error=" . urlencode("Gagal menghapus produk: " . mysqli_error($koneksi)));
+            exit();
+        }
+    } elseif ($_GET['action'] === 'takedown') {
+        // Takedown: ubah status jadi diblokir
+        $query_action = "UPDATE products SET status_barang = 'diblokir' WHERE id = $action_id";
+        if (mysqli_query($koneksi, $query_action)) {
+            header("Location: dashboardAdmin.php?success=" . urlencode("Produk berhasil di-Takedown"));
+            exit();
+        } else {
+            header("Location: dashboardAdmin.php?error=" . urlencode("Gagal melakukan takedown: " . mysqli_error($koneksi)));
+            exit();
+        }
     }
 }
 
@@ -75,14 +89,14 @@ if (isset($_GET['action']) && $_GET['action'] === 'edit' && isset($_GET['id'])) 
 }
 
 // ambil data untuk statistik
-$total_produk = mysqli_fetch_assoc(mysqli_query($koneksi, "SELECT COUNT(*) AS total FROM products"))['total'];
+$total_produk = mysqli_fetch_assoc(mysqli_query($koneksi, "SELECT COUNT(*) AS total FROM products WHERE status_barang = 'tersedia'"))['total'];
 $total_mahasiswa = mysqli_fetch_assoc(mysqli_query($koneksi, "SELECT COUNT(*) AS total FROM users WHERE role = 'mahasiswa'"))['total'];
 $total_fakultas = mysqli_fetch_assoc(mysqli_query($koneksi, "SELECT COUNT(*) AS total FROM faculties"))['total'];
 
 $result_faculties = mysqli_query($koneksi, "SELECT * FROM faculties ORDER BY nama_fakultas ASC");
 $result_categories = mysqli_query($koneksi, "SELECT * FROM categories ORDER BY nama_kategori ASC");
 
-// mengambil semua data produk
+// mengambil semua data produk beserta statusnya
 $query_tabel = "SELECT p.*, f.nama_fakultas AS fakultas, c.nama_kategori AS kategori 
                 FROM products p
                 JOIN faculties f ON p.faculty_id = f.id
@@ -223,7 +237,7 @@ $result_tabel = mysqli_query($koneksi, $query_tabel);
                                 <th class="p-4">Kategori</th> 
                                 <th class="p-4">Fakultas</th>
                                 <th class="p-4">Harga</th>
-                                <th class="p-4 text-center w-40">Aksi</th>
+                                <th class="p-4 text-center w-64">Aksi</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-gray-100 text-sm text-gray-700">
@@ -237,7 +251,14 @@ $result_tabel = mysqli_query($koneksi, $query_tabel);
                                     <td class="p-4 pl-6">
                                         <img src="<?= htmlspecialchars($row['image']) ?>" class="w-12 h-12 object-cover rounded-lg border border-gray-200">
                                     </td>
-                                    <td class="p-4 font-medium text-gray-900"><?= htmlspecialchars($row['name']) ?></td>
+                                    <td class="p-4 font-medium text-gray-900">
+                                        <?= htmlspecialchars($row['name']) ?>
+                                        <?php if ($row['status_barang'] !== 'tersedia') : ?>
+                                            <span class="ml-1 text-[10px] bg-gray-200 text-gray-600 px-1.5 py-0.5 rounded uppercase font-bold">
+                                                <?= htmlspecialchars($row['status_barang']) ?>
+                                            </span>
+                                        <?php endif; ?>
+                                    </td>
                                     <td class="p-4">
                                         <span class="bg-sky-50 text-sky-600 border border-sky-200 px-2 py-0.5 rounded text-xs font-medium">
                                             <?= htmlspecialchars($row['kategori']) ?>
@@ -254,8 +275,13 @@ $result_tabel = mysqli_query($koneksi, $query_tabel);
                                             <a href="dashboardAdmin.php?action=edit&id=<?= $row['id'] ?>" class="bg-amber-100 hover:bg-amber-200 text-amber-700 px-3 py-1 rounded-lg text-xs font-semibold transition-all">
                                                 Edit
                                             </a>
+                                            <a href="dashboardAdmin.php?action=takedown&id=<?= $row['id'] ?>" 
+                                               onclick="return confirm('Apakah Anda yakin ingin takedown produk \'<?= addslashes($row['name']) ?>\' ini?')" 
+                                               class="bg-orange-100 hover:bg-orange-200 text-orange-700 px-3 py-1 rounded-lg text-xs font-semibold transition-all">
+                                                Takedown
+                                            </a>
                                             <a href="dashboardAdmin.php?action=delete&id=<?= $row['id'] ?>" 
-                                               onclick="return confirm('Apakah Anda yakin ingin menghapus produk \'<?= addslashes($row['name']) ?>\' ini secara permanen?')" 
+                                               onclick="return confirm('Apakah Anda yakin ingin menghapus produk \'<?= addslashes($row['name']) ?>\' ini (Soft Delete)?')" 
                                                class="bg-red-100 hover:bg-red-200 text-red-700 px-3 py-1 rounded-lg text-xs font-semibold transition-all">
                                                 Hapus
                                             </a>
