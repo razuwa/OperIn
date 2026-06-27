@@ -2,12 +2,14 @@
 session_start();
 require 'require/koneksi.php';
 
-// query produk promosi
+// PERBAIKAN 1: Tambahkan AND p.status_barang = 'tersedia' untuk produk promosi
 $query_promo = "SELECT p.*, f.nama_fakultas AS fakultas 
                 FROM products p 
                 JOIN promotion_requests pr ON p.id = pr.product_id
                 JOIN faculties f ON p.faculty_id = f.id 
-                WHERE pr.status = 'approved' AND NOW() BETWEEN pr.start_date AND pr.end_date
+                WHERE pr.status = 'approved' 
+                AND NOW() BETWEEN pr.start_date AND pr.end_date
+                AND p.status_barang = 'tersedia'
                 ORDER BY p.id DESC 
                 LIMIT 5";
 $result_promo = mysqli_query($koneksi, $query_promo);
@@ -19,10 +21,11 @@ if ($result_promo) {
     }
 }
 
-// query semua produk
+// PERBAIKAN 2: Tambahkan WHERE p.status_barang = 'tersedia' untuk produk baru
 $query_baru = "SELECT p.*, f.nama_fakultas AS fakultas 
                FROM products p 
                JOIN faculties f ON p.faculty_id = f.id 
+               WHERE p.status_barang = 'tersedia'
                ORDER BY p.id DESC 
                LIMIT 10";
 $result_baru = mysqli_query($koneksi, $query_baru);
@@ -69,7 +72,7 @@ if ($result_baru) {
             <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-5">
                 <?php if (empty($promo_products)) : ?>
                     <div class="col-span-full bg-white border border-dashed border-slate-300 text-center p-8 rounded-xl text-xs text-slate-400 font-medium">
-                        Belum ada produk rekomendasi.
+                        Belum ada produk rekomendasi aktif.
                     </div>
                 <?php else : ?>
                     <?php foreach ($promo_products as $p) : ?>
