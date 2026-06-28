@@ -1,6 +1,7 @@
 <?php
 session_start();
 require 'require/koneksi.php';
+require 'require/creds.php';
 
 // Memanggil PHPMailer secara manual dari folder require
 require 'require/phpmailer/Exception.php';
@@ -63,8 +64,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $mail->isSMTP();
         $mail->Host       = 'smtp.gmail.com';
         $mail->SMTPAuth   = true;
-        $mail->Username   = 'rajwamailer@gmail.com';        // DI SINI: Masukkan Gmail kamu
-        $mail->Password   = 'kjyh uqkm fwuc pxok';        // DI SINI: Masukkan 16 Huruf Sandi Aplikasi Google
+        $mail->Username   = SMTP_USER;        // DI SINI: Masukkan Gmail kamu
+        $mail->Password   = SMTP_PASS;        // DI SINI: Masukkan 16 Huruf Sandi Aplikasi Google
         $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
         $mail->Port       = 587;
 
