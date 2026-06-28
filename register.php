@@ -2,14 +2,60 @@
 session_start();
 require 'require/koneksi.php';
 
-$query_faculties = "SELECT * FROM faculties ORDER BY nama_fakultas ASC";
-$result_faculties = mysqli_query($koneksi, $query_faculties);
-
 $error_message = $_GET['error'] ?? '';
 $success_message = $_GET['success'] ?? '';
 
+// LOGIKA PROSES PENGECEKAN OTP JIKA MAHASISWA SUBMIT KODE
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['proses_otp'])) {
+    $input_otp = mysqli_real_escape_string($koneksi, $_POST['otp_code']);
+    $session_email = $_SESSION['verifikasi_email'] ?? '';
+
+    if (empty($session_email)) {
+        header("Location: register.php?error=" . urlencode("Sesi habis, silakan daftar kembali."));
+        exit();
+    }
+
+    // Ambil data OTP di database berdasarkan email sesi
+    $query_cek = mysqli_query($koneksi, "SELECT otp_code, otp_expiry FROM users WHERE email = '$session_email' AND status = 'unverified'");
+    
+    if (mysqli_num_rows($query_cek) === 1) {
+        $user = mysqli_fetch_assoc($query_cek);
+        
+        date_default_timezone_set('Asia/Jakarta');
+        $waktu_sekarang = date('Y-m-d H:i:s');
+
+        // Validasi apakah waktu OTP sudah kadaluwarsa
+        if ($waktu_sekarang > $user['otp_expiry']) {
+            $error_message = "Kode OTP sudah kedaluwarsa! Silakan lakukan pendaftaran ulang.";
+        } 
+        // Validasi kecocokan kode OTP
+        elseif ($input_otp !== $user['otp_code']) {
+            $error_message = "Kode OTP yang Anda masukkan salah!";
+        } 
+        // OTP Benar & Tepat Waktu -> Aktifkan Akun!
+        else {
+            $update_status = mysqli_query($koneksi, "UPDATE users SET status = 'active', otp_code = NULL, otp_expiry = NULL WHERE email = '$session_email'");
+            if ($update_status) {
+                unset($_SESSION['verifikasi_email']);
+                header("Location: login.php?success=" . urlencode("Akun berhasil diverifikasi! Silakan login."));
+                exit();
+            } else {
+                $error_message = "Gagal memverifikasi akun: " . mysqli_error($koneksi);
+            }
+        }
+    } else {
+        header("Location: register.php?error=" . urlencode("Data pengguna tidak ditemukan."));
+        exit();
+    }
+}
+
+$query_faculties = "SELECT * FROM faculties ORDER BY nama_fakultas ASC";
+$result_faculties = mysqli_query($koneksi, $query_faculties);
+
 $old = $_SESSION['old_input'] ?? [];
 unset($_SESSION['old_input']);
+
+$step = $_GET['step'] ?? 'daftar';
 ?>
 
 <!DOCTYPE html>
@@ -17,7 +63,7 @@ unset($_SESSION['old_input']);
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Daftar Akun - OperIn</title>
+    <title><?= $step === 'verifikasi' ? 'Verifikasi OTP' : 'Daftar Akun' ?> - OperIn</title>
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
 </head>
 <body class="min-h-screen bg-sky-600 flex flex-col items-center justify-center p-4 md:p-6 antialiased selection:bg-sky-500 selection:text-white">
@@ -36,63 +82,91 @@ unset($_SESSION['old_input']);
                 </div>
             <?php endif; ?>
 
-            <form method="POST" action="prosesRegister.php" class="space-y-4 text-xs font-bold text-slate-500">
-                
-                <div>
-                    <label class="block mb-1 text-slate-400 font-medium">Nama Lengkap</label>
-                    <input type="text" name="nama" value="<?= htmlspecialchars($old['nama'] ?? '') ?>" placeholder="Nama lengkap Anda" required
-                    class="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-slate-800 text-sm font-normal bg-slate-50/50 focus:outline-none focus:border-sky-500 focus:bg-white transition-all">
+            <?php if ($step === 'verifikasi' || !empty($_SESSION['verifikasi_email'])) : ?>
+                <div class="text-center space-y-2 mb-4">
+                    <h3 class="text-sm font-bold text-slate-700 uppercase tracking-wide">Verifikasi Email Anda</h3>
+                    <p class="text-xs font-normal text-slate-400">Kode OTP 6-digit telah dikirim ke email <span class="text-slate-600 font-semibold"><?= htmlspecialchars($_SESSION['verifikasi_email'] ?? '') ?></span>. Cek folder Inbox atau Spam.</p>
                 </div>
 
-                <div>
-                    <label class="block mb-1 text-slate-400 font-medium">Alamat Email</label>
-                    <input type="email" name="email" value="<?= htmlspecialchars($old['email'] ?? '') ?>" placeholder="Masukkan alamat email" required
-                    class="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-slate-800 text-sm font-normal bg-slate-50/50 focus:outline-none focus:border-sky-500 focus:bg-white transition-all">
-                </div>
-
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <form method="POST" action="" class="space-y-4 text-xs font-bold text-slate-500">
+                    <input type="hidden" name="proses_otp" value="1">
                     <div>
-                        <label class="block mb-1 text-slate-400 font-medium">Kata Sandi</label>
-                        <input type="password" name="password" placeholder="Minimal 6 karakter" required minlength="6"
+                        <label class="block mb-1 text-slate-400 font-medium text-center">Masukkan 6 Digit OTP</label>
+                        <input type="text" name="otp_code" maxlength="6" placeholder="______" required autocomplete="off"
+                        class="w-full border border-slate-200 rounded-xl px-4 py-3 text-slate-800 text-xl font-bold tracking-[10px] text-center bg-slate-50/50 focus:outline-none focus:border-sky-500 focus:bg-white transition-all">
+                    </div>
+
+                    <div class="pt-2">
+                        <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white text-sm py-2.5 rounded-xl font-bold transition-all shadow-md cursor-pointer">
+                            Verifikasi Akun
+                        </button>
+                    </div>
+                </form>
+
+                <p class="text-center text-xs text-slate-400 mt-4 font-medium">
+                    Salah memasukkan email? <a href="register.php" class="text-red-500 font-bold hover:underline">Daftar Ulang</a>
+                </p>
+
+            <?php else : ?>
+                <form method="POST" action="prosesRegister.php" class="space-y-4 text-xs font-bold text-slate-500">
+                    <div>
+                        <label class="block mb-1 text-slate-400 font-medium">Nama Lengkap</label>
+                        <input type="text" name="nama" value="<?= htmlspecialchars($old['nama'] ?? '') ?>" placeholder="Nama lengkap Anda" required
                         class="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-slate-800 text-sm font-normal bg-slate-50/50 focus:outline-none focus:border-sky-500 focus:bg-white transition-all">
                     </div>
 
                     <div>
-                        <label class="block mb-1 text-slate-400 font-medium">Ulangi Kata Sandi</label>
-                        <input type="password" name="confirm_password" placeholder="Konfirmasi kata sandi" required
+                        <label class="block mb-1 text-slate-400 font-medium">Alamat Email</label>
+                        <input type="email" name="email" value="<?= htmlspecialchars($old['email'] ?? '') ?>" placeholder="Masukkan alamat email" required
                         class="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-slate-800 text-sm font-normal bg-slate-50/50 focus:outline-none focus:border-sky-500 focus:bg-white transition-all">
                     </div>
-                </div>
 
-                <div>
-                    <label class="block mb-1 text-slate-400 font-medium">Nomor WhatsApp</label>
-                    <input type="text" name="whatsapp" value="<?= htmlspecialchars($old['whatsapp'] ?? '') ?>" placeholder="Contoh: 08123456789" required
-                    class="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-slate-800 text-sm font-normal bg-slate-50/50 focus:outline-none focus:border-sky-500 focus:bg-white transition-all">
-                </div>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block mb-1 text-slate-400 font-medium">Kata Sandi</label>
+                            <input type="password" name="password" placeholder="Minimal 6 karakter" required minlength="6"
+                            class="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-slate-800 text-sm font-normal bg-slate-50/50 focus:outline-none focus:border-sky-500 focus:bg-white transition-all">
+                        </div>
 
-                <div>
-                    <label class="block mb-1 text-slate-400 font-medium">Fakultas Asal</label>
-                    <select name="faculty_id" required
-                    class="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-slate-800 text-sm font-normal bg-white focus:outline-none focus:border-sky-500 transition-all">
-                        <option value="" disabled <?= !isset($old['faculty_id']) ? 'selected' : '' ?>>-- Pilih Fakultas Asal Anda --</option>
-                        <?php while ($f = mysqli_fetch_assoc($result_faculties)) : ?>
-                            <option value="<?= $f['id'] ?>" <?= (isset($old['faculty_id']) && $old['faculty_id'] == $f['id']) ? 'selected' : '' ?>>
-                                <?= htmlspecialchars($f['nama_fakultas']) ?>
-                            </option>
-                        <?php endwhile; ?>
-                    </select>
-                </div>
+                        <div>
+                            <label class="block mb-1 text-slate-400 font-medium">Ulangi Kata Sandi</label>
+                            <input type="password" name="confirm_password" placeholder="Konfirmasi kata sandi" required
+                            class="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-slate-800 text-sm font-normal bg-slate-50/50 focus:outline-none focus:border-sky-500 focus:bg-white transition-all">
+                        </div>
+                    </div>
 
-                <div class="pt-2">
-                    <button type="submit" class="w-full bg-sky-600 hover:bg-sky-700 text-white text-sm py-2.5 rounded-xl font-bold transition-all shadow-md shadow-sky-600/10 cursor-pointer">
-                        Daftar Akun Sekarang
-                    </button>
-                </div>
-            </form>
+                    <div>
+                        <label class="block mb-1 text-slate-400 font-medium">Nomor WhatsApp</label>
+                        <input type="tel" name="whatsapp" value="<?= htmlspecialchars($old['whatsapp'] ?? '') ?>" 
+                        placeholder="Contoh: 08123456789" required pattern="[0-9]{9,15}" 
+                        oninput="this.value = this.value.replace(/[^0-9]/g, '');"
+                        class="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-slate-800 text-sm font-normal bg-slate-50/50 focus:outline-none focus:border-sky-500 focus:bg-white transition-all">
+                    </div>
 
-            <p class="text-center text-xs text-slate-400 mt-4 font-medium">
-                Sudah memiliki akun? <a href="login.php" class="text-sky-600 font-bold hover:text-orange-500 transition-colors">Login di sini</a>
-            </p>
+                    <div>
+                        <label class="block mb-1 text-slate-400 font-medium">Fakultas Asal</label>
+                        <select name="faculty_id" required
+                        class="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-slate-800 text-sm font-normal bg-white focus:outline-none focus:border-sky-500 transition-all">
+                            <option value="" disabled <?= !isset($old['faculty_id']) ? 'selected' : '' ?>>-- Pilih Fakultas Asal Anda --</option>
+                            <?php while ($f = mysqli_fetch_assoc($result_faculties)) : ?>
+                                <option value="<?= $f['id'] ?>" <?= (isset($old['faculty_id']) && $old['faculty_id'] == $f['id']) ? 'selected' : '' ?>>
+                                    <?= htmlspecialchars($f['nama_fakultas']) ?>
+                                </option>
+                            <?php endwhile; ?>
+                        </select>
+                    </div>
+
+                    <div class="pt-2">
+                        <button type="submit" class="w-full bg-sky-600 hover:bg-sky-700 text-white text-sm py-2.5 rounded-xl font-bold transition-all shadow-md shadow-sky-600/10 cursor-pointer">
+                            Daftar Akun Sekarang
+                        </button>
+                    </div>
+                </form>
+
+                <p class="text-center text-xs text-slate-400 mt-4 font-medium">
+                    Sudah memiliki akun? <a href="login.php" class="text-sky-600 font-bold hover:text-orange-500 transition-colors">Login di sini</a>
+                </p>
+            <?php endif; ?>
         </div>
 
         <div class="mt-2 pt-2 border-t border-slate-100 flex items-center justify-center gap-2">
