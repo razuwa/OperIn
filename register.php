@@ -137,7 +137,9 @@ $step = $_GET['step'] ?? 'daftar';
 
                     <div>
                         <label class="block mb-1 text-slate-400 font-medium">Nomor WhatsApp</label>
-                        <input type="text" name="whatsapp" value="<?= htmlspecialchars($old['whatsapp'] ?? '') ?>" placeholder="Contoh: 08123456789" required
+                        <input type="tel" name="whatsapp" value="<?= htmlspecialchars($old['whatsapp'] ?? '') ?>" 
+                        placeholder="Contoh: 08123456789" required pattern="[0-9]{9,15}" 
+                        oninput="this.value = this.value.replace(/[^0-9]/g, '');"
                         class="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-slate-800 text-sm font-normal bg-slate-50/50 focus:outline-none focus:border-sky-500 focus:bg-white transition-all">
                     </div>
 

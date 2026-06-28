@@ -42,6 +42,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (mysqli_num_rows($check_email) > 0) {
         kirimError("Email sudah terdaftar!");
     }
+    
+    $whatsapp = str_replace([' ', '-', '+'], '', $_POST['whatsapp']);
+
+    // Validasi mutlak: Pastikan string hanya berisi angka dan panjangnya masuk akal (9-15 digit)
+    if (!preg_match('/^[0-9]+$/', $whatsapp) || strlen($whatsapp) < 9 || strlen($whatsapp) > 15) {
+        kirimError("Nomor WhatsApp harus berupa angka dan berjumlah 9-15 digit!");
+    }
 
     unset($_SESSION['old_input']);
     
