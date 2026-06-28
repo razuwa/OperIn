@@ -10,6 +10,7 @@ $current_fac = $_GET['faculty'] ?? '';
 $current_kondisi = $_GET['kondisi'] ?? '';
 $current_min = $_GET['min_price'] ?? '';
 $current_max = $_GET['max_price'] ?? '';
+$current_type = $_GET['type'] ?? '';
 ?>
 
 <div class="flex justify-end border-b-2 bg-slate-100 border-slate-200 shadow-sm p-3 w-full z-40 relative">
@@ -30,6 +31,7 @@ $current_max = $_GET['max_price'] ?? '';
 
                 <form action="fullProduk.php" method="GET" class="p-5 space-y-4 text-left">
                     <?php if(isset($_GET['search'])) echo '<input type="hidden" name="search" value="'.htmlspecialchars($_GET['search']).'">'; ?>
+                    <?php if(!empty($current_type)) echo '<input type="hidden" name="type" value="'.htmlspecialchars($current_type).'">'; ?>
 
                     <div class="grid grid-cols-2 gap-3">
                         <div>
@@ -83,7 +85,7 @@ $current_max = $_GET['max_price'] ?? '';
                     </div>
 
                     <div class="pt-2 flex gap-2">
-                        <a href="fullProduk.php" class="w-1/3 bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold py-2.5 rounded-xl text-center transition-colors text-xs flex items-center justify-center">Reset</a>
+                        <a href="fullProduk.php<?= !empty($current_type) ? '?type=' . htmlspecialchars($current_type) : '' ?>" class="w-1/3 bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold py-2.5 rounded-xl text-center transition-colors text-xs flex items-center justify-center">Reset</a>
                         <button type="submit" class="w-2/3 bg-sky-600 hover:bg-sky-700 text-white font-bold py-2.5 rounded-xl transition-colors cursor-pointer text-xs shadow-md shadow-sky-600/20">Terapkan Filter</button>
                     </div>
                 </form>

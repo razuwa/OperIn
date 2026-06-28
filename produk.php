@@ -66,7 +66,7 @@ if ($result_baru) {
                         <span class="text-[10px] bg-amber-100 text-amber-700 font-bold px-1.5 py-0.5 rounded-sm uppercase tracking-wider border border-amber-200">Promoted</span>
                     </h2>
                 </div>
-                <a href="fullPromosi.php" class="text-xs font-bold text-sky-600 hover:text-orange-500 transition-colors shrink-0">Lihat Semua →</a>
+                <a href="fullProduk.php?type=promoted" class="text-xs font-bold text-sky-600 hover:text-orange-500 transition-colors shrink-0">Lihat Semua →</a>
             </div>
                         
             <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-5">

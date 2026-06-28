@@ -2,6 +2,7 @@
 session_start();
 require 'require/koneksi.php';
 
+// 1. TANGKAP PARAMETER UTAMA
 $search = $_GET['search'] ?? '';
 $category = $_GET['category'] ?? '';
 $faculty = $_GET['faculty'] ?? '';
@@ -9,22 +10,36 @@ $kondisi = $_GET['kondisi'] ?? '';
 $min_price = $_GET['min_price'] ?? '';
 $max_price = $_GET['max_price'] ?? '';
 $sort = $_GET['sort'] ?? '';
+$type = $_GET['type'] ?? ''; 
 
+// Setup limit halaman
 $limit = 20;
 $page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
 if ($page < 1) { $page = 1; }
 $offset = ($page - 1) * $limit;
 
+// 2. KONDISI AWAL JOIN
 $base_query = "SELECT p.*, f.nama_fakultas AS fakultas FROM products p ";
 $count_query = "SELECT COUNT(*) AS total FROM products p ";
 
-$join_faculty = " JOIN faculties f ON p.faculty_id = f.id ";
-$base_query .= $join_faculty;
-$count_query .= $join_faculty;
+$join_sql = " JOIN faculties f ON p.faculty_id = f.id ";
 
-// PERBAIKAN: Suntikkan filter status 'tersedia' sebagai kondisi wajib mutlak
+if ($type === 'promoted') {
+    $join_sql .= " JOIN promotion_requests pr ON p.id = pr.product_id ";
+}
+
+$base_query .= $join_sql;
+$count_query .= $join_sql;
+
+// 3. KONDISI WHERE UTAMA
 $where_clauses = ["p.status_barang = 'tersedia'"];
 
+if ($type === 'promoted') {
+    $where_clauses[] = "pr.status = 'approved'";
+    $where_clauses[] = "NOW() BETWEEN pr.start_date AND pr.end_date";
+}
+
+// Filter tambahan dari user
 if (!empty($search)) $where_clauses[] = "p.name LIKE '%" . mysqli_real_escape_string($koneksi, $search) . "%'";
 if (!empty($category)) $where_clauses[] = "p.category_id = " . (int)$category;
 if (!empty($faculty)) $where_clauses[] = "p.faculty_id = " . (int)$faculty;
@@ -38,10 +53,12 @@ if (!empty($where_clauses)) {
     $count_query .= $where_sql;
 }
 
+// Urutan data
 if ($sort === 'termurah') $base_query .= " ORDER BY p.price ASC";
 elseif ($sort === 'termahal') $base_query .= " ORDER BY p.price DESC";
 else $base_query .= " ORDER BY p.id DESC"; 
 
+// Eksekusi data produk
 $base_query .= " LIMIT $limit OFFSET $offset";
 $result = mysqli_query($koneksi, $base_query);
 $products = [];
@@ -51,11 +68,14 @@ if ($result) {
     }
 }
 
+// Eksekusi total data
 $total_result = mysqli_query($koneksi, $count_query);
 $total_data = mysqli_fetch_assoc($total_result)['total'];
 $total_pages = ceil($total_data / $limit);
 
+// 4. AMBIL NAMA TEKS UNTUK LABEL FILTER AKTIF
 $active_filters = [];
+// REVISI: Menghapus label "Jenis: Rekomendasi" dari array ini agar tidak memicu tombol reset filter aktif secara keliru
 if (!empty($search)) $active_filters[] = "Pencarian: " . $search;
 if (!empty($category)) {
     $q_cat = mysqli_query($koneksi, "SELECT nama_kategori FROM categories WHERE id = " . (int)$category);
@@ -71,8 +91,6 @@ if (!empty($min_price) || !empty($max_price)) {
     $p_max = !empty($max_price) ? "Rp" . number_format($max_price,0,',','.') : "Tak terhingga";
     $active_filters[] = "Harga: $p_min - $p_max";
 }
-if ($sort === 'termurah') $active_filters[] = "Urutan: Termurah";
-elseif ($sort === 'termahal') $active_filters[] = "Urutan: Termahal";
 ?>
 
 <!DOCTYPE html>
@@ -80,7 +98,7 @@ elseif ($sort === 'termahal') $active_filters[] = "Urutan: Termahal";
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Katalog Produk - OperIn</title>
+    <title><?= $type === 'promoted' ? 'Rekomendasi Produk' : 'Katalog Produk' ?> - OperIn</title>
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
     <style>html { scroll-behavior: smooth; }</style>
 </head>
@@ -100,8 +118,8 @@ elseif ($sort === 'termahal') $active_filters[] = "Urutan: Termahal";
         <div class="flex items-end justify-between border-b border-slate-200 pb-3">
             <div>
                 <h2 class="text-lg font-bold text-slate-900 tracking-tight flex items-center gap-2">
-                    <span class="w-2 h-5 bg-sky-500 rounded-xs"></span>
-                    Semua Produk
+                    <span class="w-2 h-5 <?= $type === 'promoted' ? 'bg-amber-500' : 'bg-sky-500' ?> rounded-xs"></span>
+                    <?= $type === 'promoted' ? 'Semua Produk Rekomendasi' : 'Semua Produk' ?>
                 </h2>
             </div>
             <a href="produk.php" class="text-xs font-bold text-sky-600 hover:text-orange-500 transition-colors shrink-0">← Beranda Utama</a>
@@ -111,11 +129,11 @@ elseif ($sort === 'termahal') $active_filters[] = "Urutan: Termahal";
             <div class="flex flex-wrap items-center gap-2">
                 <span class="text-xs text-slate-500 font-medium mr-1">Filter Aktif:</span>
                 <?php foreach ($active_filters as $af): ?>
-                    <span class="bg-sky-100 border border-sky-200 text-sky-700 text-[10px] font-bold px-2.5 py-1 rounded-lg">
+                    <span class="bg-sky-100 border border-sky-200 text-sky-700 border text-[10px] font-bold px-2.5 py-1 rounded-lg">
                         <?= htmlspecialchars($af) ?>
                     </span>
                 <?php endforeach; ?>
-                <a href="fullProduk.php" class="text-[10px] font-bold text-red-500 hover:text-red-700 underline ml-2 transition-colors">
+                <a href="fullProduk.php<?= $type === 'promoted' ? '?type=promoted' : '' ?>" class="text-[10px] font-bold text-red-500 hover:text-red-700 underline ml-2 transition-colors">
                     Reset Filter
                 </a>
             </div>
@@ -129,7 +147,12 @@ elseif ($sort === 'termahal') $active_filters[] = "Urutan: Termahal";
             <?php else: ?>
                 <?php foreach ($products as $p) : ?>
                 <a href="detailProduk.php?id=<?= $p['id'] ?>" class="group block h-full">
-                    <div class="bg-white border border-slate-200/70 rounded-xl shadow-xs overflow-hidden hover:shadow-lg hover:-translate-y-1 transition-all duration-300 h-full flex flex-col">
+                    <div class="bg-white border border-slate-200/70 rounded-xl shadow-xs overflow-hidden hover:shadow-lg hover:-translate-y-1 transition-all duration-300 h-full flex flex-col relative">
+                        
+                        <?php if ($type === 'promoted') : ?>
+                            <div class="absolute top-2 left-2 bg-amber-500 text-white text-[9px] font-extrabold px-1.5 py-0.5 rounded-md shadow-xs uppercase tracking-wide z-10">STAR</div>
+                        <?php endif; ?>
+
                         <div class="w-full aspect-square bg-slate-50 overflow-hidden shrink-0">
                             <img src="<?= htmlspecialchars($p['image']) ?>" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
                         </div>
@@ -138,12 +161,12 @@ elseif ($sort === 'termahal') $active_filters[] = "Urutan: Termahal";
                                 <?= htmlspecialchars($p['name']) ?>
                             </p>
                             <div class="space-y-1">
-                                <p class="text-base font-bold text-slate-900 tracking-tight">
+                                <p class="text-base font-bold <?= $type === 'promoted' ? 'text-amber-600' : 'text-slate-900' ?> tracking-tight">
                                     Rp<?= number_format($p['price'], 0, ',', '.') ?>
                                 </p>
                                 <div class="flex justify-between items-center text-[11px] pt-1.5 border-t border-slate-100">
                                     <span class="text-slate-400 font-medium truncate max-w-[65px]"><?= htmlspecialchars($p['fakultas']) ?></span>
-                                    <span class="bg-slate-100 text-slate-600 border border-slate-200 px-1.5 py-0.5 rounded font-bold text-[10px]">
+                                    <span class="px-1.5 py-0.5 rounded font-bold text-[10px] <?= $type === 'promoted' ? 'bg-orange-50 text-orange-600 border-orange-100' : 'bg-slate-100 text-slate-600 border-slate-200' ?> border">
                                         <?= htmlspecialchars($p['kondisi']) ?>
                                     </span>
                                 </div>
