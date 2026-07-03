@@ -17,12 +17,12 @@ session_start();
 
     <div id="landingPage" class="min-h-screen w-full flex flex-col items-center justify-center px-4 py-12 md:py-20 text-center select-none" >
         
-        <a href="reset.php" class="block shrink-0">
-            <div class="flex items-center bg-sky-500 text-white text-xl md:text-2xl font-bold px-6 md:px-8 py-2 rounded-full shadow-lg transition-all hover:bg-sky-700 hover:scale-105">
+        <div href="reset.php" class="block shrink-0">
+            <div class="flex items-center bg-sky-500 text-white text-xl md:text-2xl font-bold px-6 md:px-8 py-2 rounded-full shadow-lg transition-all">
                 <img src="assets/logo-operin.png" alt="Logo Operin" class="max-h-6 md:max-h-8 pr-3 object-contain">
                 <h2>OperIn</h2>
             </div>
-        </a>
+        </div>
         
         <div class="mt-8 md:mt-12 space-y-1 md:space-y-2 max-w-3xl">
             <h1 class="text-white font-bold text-3xl sm:text-4xl md:text-5xl lg:text-6xl tracking-tight leading-tight">
