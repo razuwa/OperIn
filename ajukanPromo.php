@@ -36,8 +36,9 @@ $result_paket = mysqli_query($koneksi, "SELECT * FROM promo_packages ORDER BY pr
             </a>
         </div>
 
-        <?php if ($error_msg) : ?><div class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl mb-6 text-xs font-bold"><?= htmlspecialchars($error_msg) ?></div><?php endif; ?>
-        <?php if ($success_msg) : ?><div class="bg-emerald-50 border border-emerald-200 text-emerald-700 px-4 py-3 rounded-xl mb-6 text-xs font-bold"><?= htmlspecialchars($success_msg) ?></div><?php endif; ?>
+        <?php if ($error_msg) : ?><div id="ajaxMessage" class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl mb-6 text-xs font-bold"><?= htmlspecialchars($error_msg) ?></div>
+        <?php elseif ($success_msg) : ?><div id="ajaxMessage" class="bg-emerald-50 border border-emerald-200 text-emerald-700 px-4 py-3 rounded-xl mb-6 text-xs font-bold"><?= htmlspecialchars($success_msg) ?></div>
+        <?php else : ?><div id="ajaxMessage" class="hidden px-4 py-3 rounded-xl mb-6 text-xs font-bold"></div><?php endif; ?>
 
         <div class="bg-sky-50 border border-sky-200 p-4 rounded-xl mb-6 text-xs text-sky-800">
             <p class="font-bold mb-1">Instruksi Pembayaran:</p>
@@ -45,7 +46,7 @@ $result_paket = mysqli_query($koneksi, "SELECT * FROM promo_packages ORDER BY pr
         </div>
 
         <div class="bg-white border border-slate-200 p-6 rounded-2xl shadow-xs">
-            <form method="POST" action="prosesAjukanPromo.php" enctype="multipart/form-data" class="space-y-5 text-xs font-bold text-slate-600">
+            <form id="promoRequestForm" method="POST" action="prosesAjukanPromo.php" enctype="multipart/form-data" class="space-y-5 text-xs font-bold text-slate-600">
                 
                 <div>
                     <label class="block mb-1.5 text-slate-500">Pilih Barang Anda</label>
@@ -79,12 +80,52 @@ $result_paket = mysqli_query($koneksi, "SELECT * FROM promo_packages ORDER BY pr
                 </div>
 
                 <div class="pt-4 border-t border-slate-100">
-                    <button type="submit" class="w-full bg-amber-500 hover:bg-amber-600 text-white font-bold py-3 rounded-xl shadow-md cursor-pointer text-sm">
+                    <button id="promoSubmitBtn" type="submit" class="w-full bg-amber-500 hover:bg-amber-600 text-white font-bold py-3 rounded-xl shadow-md cursor-pointer text-sm">
                         Kirim Bukti & Ajukan Promosi
                     </button>
                 </div>
             </form>
         </div>
     </main>
+    <script>
+        const promoForm = document.getElementById('promoRequestForm');
+        const promoSubmitBtn = document.getElementById('promoSubmitBtn');
+        const promoMessage = document.getElementById('ajaxMessage');
+
+        function showRequestMessage(message, success = true) {
+            promoMessage.textContent = message;
+            promoMessage.className = (success
+                ? 'bg-emerald-50 border border-emerald-200 text-emerald-700'
+                : 'bg-red-50 border border-red-200 text-red-700') + ' px-4 py-3 rounded-xl mb-6 text-xs font-bold';
+        }
+
+        promoForm.addEventListener('submit', async (event) => {
+            event.preventDefault();
+
+            const originalText = promoSubmitBtn.textContent;
+            promoSubmitBtn.textContent = 'Mengirim...';
+            promoSubmitBtn.disabled = true;
+            promoSubmitBtn.classList.add('opacity-70');
+
+            try {
+                const response = await fetch(promoForm.action + '?ajax=1', {
+                    method: 'POST',
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' },
+                    body: new FormData(promoForm)
+                });
+                const result = await response.json();
+                showRequestMessage(result.message, result.success);
+                if (result.success) {
+                    promoForm.reset();
+                }
+            } catch (error) {
+                showRequestMessage('Gagal mengirim pengajuan. Coba ulangi beberapa saat lagi.', false);
+            }
+
+            promoSubmitBtn.textContent = originalText;
+            promoSubmitBtn.disabled = false;
+            promoSubmitBtn.classList.remove('opacity-70');
+        });
+    </script>
 </body>
 </html>
