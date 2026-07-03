@@ -1,6 +1,7 @@
 <?php
 session_start();
 require 'require/koneksi.php';
+require 'require/functions.php';
 
 date_default_timezone_set('Asia/Jakarta');
 mysqli_query($koneksi, "SET time_zone = '+07:00'");
@@ -53,9 +54,11 @@ $result_data = mysqli_query($koneksi, $query_data);
         <div class="max-w-6xl mx-auto space-y-6">
             
             <?php if (isset($_GET['msg'])) : ?>
-                <div class="bg-emerald-50 border border-emerald-200 text-emerald-700 px-4 py-3 rounded-xl text-xs font-bold shadow-xs">
+                <div id="ajaxMessage" class="bg-emerald-50 border border-emerald-200 text-emerald-700 px-4 py-3 rounded-xl text-xs font-bold shadow-xs">
                     <?= htmlspecialchars($_GET['msg']) ?>
                 </div>
+            <?php else : ?>
+                <div id="ajaxMessage" class="hidden px-4 py-3 rounded-xl text-xs font-bold shadow-xs"></div>
             <?php endif; ?>
 
             <div class="bg-white rounded-2xl shadow-xs border border-slate-200 overflow-hidden">
@@ -83,7 +86,7 @@ $result_data = mysqli_query($koneksi, $query_data);
                                 <tr><td colspan="5" class="text-center py-12 text-slate-400 font-medium">Tidak ada data untuk ditampilkan pada kategori ini.</td></tr>
                             <?php else: ?>
                                 <?php while ($row = mysqli_fetch_assoc($result_data)) : ?>
-                                <tr class="hover:bg-slate-50/50 transition-colors">
+                                <tr data-promo-row="<?= $row['id'] ?>" class="hover:bg-slate-50/50 transition-colors">
                                     
                                     <?php if ($filter_status === 'aktif') : ?>
                                         <td class="px-6 py-4 text-emerald-600 font-bold"><?= date('d M Y, H:i', strtotime($row['start_date'])) ?></td>
@@ -97,7 +100,7 @@ $result_data = mysqli_query($koneksi, $query_data);
                                                 </div>
                                             </div>
                                         </td>
-                                        <td class="px-6 py-4 font-bold text-slate-500">Rp<?= number_format($row['amount'], 0, ',', '.') ?></td>
+                                        <td class="px-6 py-4 font-bold text-slate-500"><?= format_rupiah($row['amount']) ?></td>
                                         <td class="px-6 py-4 text-center">
                                             <span class="bg-emerald-100 text-emerald-700 px-2.5 py-1 rounded-md text-[10px] font-bold uppercase">TAYANG</span>
                                         </td>
@@ -112,14 +115,14 @@ $result_data = mysqli_query($koneksi, $query_data);
                                                 </div>
                                             </div>
                                         </td>
-                                        <td class="px-6 py-4 font-bold text-amber-600">Rp<?= number_format($row['amount'], 0, ',', '.') ?></td>
+                                        <td class="px-6 py-4 font-bold text-amber-600"><?= format_rupiah($row['amount']) ?></td>
                                         <td class="px-6 py-4 text-center">
                                             <a href="<?= htmlspecialchars($row['payment_proof']) ?>" target="_blank" class="inline-block px-3 py-1 bg-sky-100 text-sky-700 font-bold rounded hover:bg-sky-200 transition-colors">Lihat Struk</a>
                                         </td>
                                         <td class="px-6 py-4">
                                             <div class="flex justify-center gap-2">
-                                                <a href="prosesKelolaPromo.php?action=approve&id=<?= $row['id'] ?>" onclick="return confirm('Uang sudah masuk?')" class="px-4 py-2 bg-emerald-500 text-white font-bold rounded-lg hover:bg-emerald-600 shadow-xs transition-colors">Setujui</a>
-                                                <a href="prosesKelolaPromo.php?action=reject&id=<?= $row['id'] ?>" onclick="return confirm('Tolak pengajuan ini?')" class="px-4 py-2 bg-red-50 text-red-600 border border-red-200 font-bold rounded-lg hover:bg-red-100 transition-colors">Tolak</a>
+                                                <a href="prosesKelolaPromo.php?action=approve&id=<?= $row['id'] ?>" data-ajax-action="promo" data-confirm="Uang sudah masuk?" class="px-4 py-2 bg-emerald-500 text-white font-bold rounded-lg hover:bg-emerald-600 shadow-xs transition-colors">Setujui</a>
+                                                <a href="prosesKelolaPromo.php?action=reject&id=<?= $row['id'] ?>" data-ajax-action="promo" data-confirm="Tolak pengajuan ini?" class="px-4 py-2 bg-red-50 text-red-600 border border-red-200 font-bold rounded-lg hover:bg-red-100 transition-colors">Tolak</a>
                                             </div>
                                         </td>
                                     <?php endif; ?>
@@ -133,5 +136,47 @@ $result_data = mysqli_query($koneksi, $query_data);
             </div>
         </div>
     </main>
+    <script>
+        const promoMessage = document.getElementById('ajaxMessage');
+
+        function showPromoMessage(message, success = true) {
+            promoMessage.textContent = message;
+            promoMessage.className = (success
+                ? 'bg-emerald-50 border border-emerald-200 text-emerald-700'
+                : 'bg-red-50 border border-red-200 text-red-700') + ' px-4 py-3 rounded-xl text-xs font-bold shadow-xs';
+        }
+
+        document.querySelectorAll('[data-ajax-action="promo"]').forEach((link) => {
+            link.addEventListener('click', async (event) => {
+                event.preventDefault();
+                const confirmText = link.dataset.confirm;
+                if (confirmText && !confirm(confirmText)) return;
+
+                const originalText = link.textContent;
+                link.textContent = 'Memproses...';
+                link.classList.add('pointer-events-none', 'opacity-60');
+
+                try {
+                    const response = await fetch(link.href + '&ajax=1', {
+                        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                    });
+                    const result = await response.json();
+                    showPromoMessage(result.message, result.success);
+
+                    if (result.success) {
+                        const row = link.closest('[data-promo-row]');
+                        if (row) row.remove();
+                    } else {
+                        link.textContent = originalText;
+                        link.classList.remove('pointer-events-none', 'opacity-60');
+                    }
+                } catch (error) {
+                    showPromoMessage('Gagal menghubungi server. Coba ulangi aksi.', false);
+                    link.textContent = originalText;
+                    link.classList.remove('pointer-events-none', 'opacity-60');
+                }
+            });
+        });
+    </script>
 </body>
 </html>

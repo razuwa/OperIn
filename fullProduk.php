@@ -75,7 +75,6 @@ $total_pages = ceil($total_data / $limit);
 
 // 4. AMBIL NAMA TEKS UNTUK LABEL FILTER AKTIF
 $active_filters = [];
-// REVISI: Menghapus label "Jenis: Rekomendasi" dari array ini agar tidak memicu tombol reset filter aktif secara keliru
 if (!empty($search)) $active_filters[] = "Pencarian: " . $search;
 if (!empty($category)) {
     $q_cat = mysqli_query($koneksi, "SELECT nama_kategori FROM categories WHERE id = " . (int)$category);

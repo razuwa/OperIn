@@ -1,67 +1,89 @@
 <?php
 session_start();
 require 'require/koneksi.php';
+require 'require/functions.php';
 
-if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-    header("Location: ajukanPromo.php");
+// Pastikan hanya admin yang bisa mengakses
+require_admin_session();
+
+if (!isset($_GET['action']) || !isset($_GET['id'])) {
+    if (is_ajax_request()) {
+        json_response(false, 'Data aksi pengguna tidak lengkap.');
+    }
+    header("Location: kelolaUser.php"); exit();
+}
+
+$action = $_GET['action'];
+$target_id = (int)$_GET['id'];
+$admin_id = $_SESSION['user_id'];
+$msg = '';
+
+// Mencegah admin memanipulasi akunnya sendiri (Kecuali reset password)
+if ($target_id === $admin_id && $action !== 'reset') {
+    if (is_ajax_request()) {
+        json_response(false, "Anda tidak dapat mengubah status atau role akun Anda sendiri.");
+    }
+    header("Location: kelolaUser.php?msg=" . urlencode("Anda tidak dapat mengubah status atau role akun Anda sendiri."));
     exit();
 }
 
-$user_id = $_SESSION['user_id'];
-$product_id = (int)$_POST['product_id'];
-$package_id = (int)$_POST['package_id'];
+// EKSEKUSI BERDASARKAN AKSI
+switch ($action) {
+    case 'reset':
+        // Enkripsi ulang sandi default menjadi "123456"
+        $new_password = password_hash('123456', PASSWORD_DEFAULT);
+        $query = "UPDATE users SET password = '$new_password' WHERE id = $target_id";
+        if (mysqli_query($koneksi, $query)) {
+            $msg = "Password berhasil direset menjadi: 123456";
+        }
+        break;
 
-// Validasi kepemilikan dan status (seperti sebelumnya)
-$cek_milik = mysqli_query($koneksi, "SELECT id FROM products WHERE id = $product_id AND user_id = $user_id");
-if (mysqli_num_rows($cek_milik) === 0) {
-    header("Location: ajukanPromo.php?error=" . urlencode("Produk tidak valid.")); exit();
+    case 'role':
+        // Cek role saat ini, lalu balikkan nilainya (mahasiswa -> admin -> mahasiswa)
+        $q_role = mysqli_query($koneksi, "SELECT role FROM users WHERE id = $target_id");
+        $current_role = mysqli_fetch_assoc($q_role)['role'];
+        $new_role = ($current_role === 'admin') ? 'mahasiswa' : 'admin';
+        
+        $query = "UPDATE users SET role = '$new_role' WHERE id = $target_id";
+        if (mysqli_query($koneksi, $query)) {
+            $msg = "Role berhasil diubah menjadi " . strtoupper($new_role) . ".";
+        }
+        break;
+
+    case 'status':
+        // Cek status saat ini, lalu balikkan nilainya (active -> banned -> active)
+        $q_status = mysqli_query($koneksi, "SELECT status FROM users WHERE id = $target_id");
+        $current_status = mysqli_fetch_assoc($q_status)['status'];
+        $new_status = ($current_status === 'active') ? 'banned' : 'active';
+        
+        $query = "UPDATE users SET status = '$new_status' WHERE id = $target_id";
+        if (mysqli_query($koneksi, $query)) {
+            $msg = "Akun berhasil di-" . ($new_status === 'banned' ? 'blokir' : 'aktifkan kembali') . ".";
+        }
+        break;
+
+    case 'delete':
+        // Hapus permanen (Sangat berbahaya, akan memicu efek domino ON DELETE CASCADE)
+        $query = "DELETE FROM users WHERE id = $target_id";
+        if (mysqli_query($koneksi, $query)) {
+            $msg = "Pengguna berhasil dihapus secara permanen beserta datanya.";
+        } else {
+            $msg = "Gagal menghapus! " . mysqli_error($koneksi);
+        }
+        break;
+
+    default:
+        $msg = "Aksi tidak dikenali.";
 }
 
-$cek_promo = mysqli_query($koneksi, "SELECT id FROM promotion_requests WHERE product_id = $product_id AND status IN ('pending', 'approved') AND (end_date IS NULL OR end_date > NOW())");
-if (mysqli_num_rows($cek_promo) > 0) {
-    header("Location: ajukanPromo.php?error=" . urlencode("Barang ini masih memiliki promo aktif/pending.")); exit();
+if (is_ajax_request()) {
+    json_response($msg !== "Aksi tidak dikenali.", $msg, [
+        'id' => $target_id,
+        'action' => $action,
+        'role' => $new_role ?? null,
+        'status' => $new_status ?? null
+    ]);
 }
 
-// Ambil harga paket untuk dimasukkan ke tabel payments
-$query_harga = mysqli_query($koneksi, "SELECT price FROM promo_packages WHERE id = $package_id");
-$harga_paket = mysqli_fetch_assoc($query_harga)['price'];
-
-// PROSES UPLOAD FILE BUKTI BAYAR
-$target_dir = "assets/";
-$file_extension = strtolower(pathinfo($_FILES["bukti_bayar"]["name"], PATHINFO_EXTENSION));
-$new_filename = "pay_" . time() . "_" . rand(100,999) . "." . $file_extension;
-$target_file = $target_dir . $new_filename;
-
-// Hanya izinkan gambar
-if (!in_array($file_extension, ['jpg', 'jpeg', 'png', 'webp'])) {
-    header("Location: ajukanPromo.php?error=" . urlencode("Format file harus JPG/PNG/WEBP.")); exit();
-}
-
-if (!move_uploaded_file($_FILES["bukti_bayar"]["tmp_name"], $target_file)) {
-    header("Location: ajukanPromo.php?error=" . urlencode("Gagal mengunggah foto bukti bayar.")); exit();
-}
-
-// TRANSAKSI DATABASE (Memasukkan ke 2 tabel sekaligus)
-mysqli_begin_transaction($koneksi);
-try {
-    // 1. Insert ke tabel promotion_requests
-    $q_promo = "INSERT INTO promotion_requests (user_id, product_id, package_id, status) VALUES ($user_id, $product_id, $package_id, 'pending')";
-    mysqli_query($koneksi, $q_promo);
-    
-    // Ambil ID dari promotion_request yang baru saja masuk
-    $promo_req_id = mysqli_insert_id($koneksi);
-
-    // 2. Insert ke tabel payments
-    $q_pay = "INSERT INTO payments (promotion_req_id, amount, payment_proof, status) VALUES ($promo_req_id, $harga_paket, '$target_file', 'pending')";
-    mysqli_query($koneksi, $q_pay);
-
-    // Jika sukses berdua, permanenkan data
-    mysqli_commit($koneksi);
-    header("Location: ajukanPromo.php?success=" . urlencode("Pengajuan dan bukti bayar berhasil terkirim."));
-} catch (Exception $e) {
-    // Jika ada yang gagal, batalkan semua insert dan hapus foto
-    mysqli_rollback($koneksi);
-    if(file_exists($target_file)) unlink($target_file);
-    header("Location: ajukanPromo.php?error=" . urlencode("Terjadi kesalahan sistem database."));
-}
+header("Location: kelolaUser.php?msg=" . urlencode($msg));
 exit();
