@@ -16,23 +16,14 @@ $target_id = (int)$_GET['id'];
 $admin_id = $_SESSION['user_id'];
 $msg = '';
 
-// Mencegah admin memanipulasi akunnya sendiri (Kecuali reset password)
-if ($target_id === $admin_id && $action !== 'reset') {
+// Mencegah admin memanipulasi akunnya sendiri
+if ($target_id === $admin_id) {
     header("Location: kelolaUser.php?msg=" . urlencode("Anda tidak dapat mengubah status atau role akun Anda sendiri."));
     exit();
 }
 
 // EKSEKUSI BERDASARKAN AKSI
 switch ($action) {
-    case 'reset':
-        // Enkripsi ulang sandi default menjadi "123456"
-        $new_password = password_hash('123456', PASSWORD_DEFAULT);
-        $query = "UPDATE users SET password = '$new_password' WHERE id = $target_id";
-        if (mysqli_query($koneksi, $query)) {
-            $msg = "Password berhasil direset menjadi: 123456";
-        }
-        break;
-
     case 'role':
         // Cek role saat ini, lalu balikkan nilainya (mahasiswa -> admin -> mahasiswa)
         $q_role = mysqli_query($koneksi, "SELECT role FROM users WHERE id = $target_id");

@@ -52,7 +52,7 @@ $result_users = mysqli_query($koneksi, $query_users);
                                 <th class="px-6 py-4 text-center">Fakultas</th>
                                 <th class="px-6 py-4 text-center">Role / Jabatan</th>
                                 <th class="px-6 py-4 text-center">Status Akun</th>
-                                <th class="px-6 py-4 text-center">Aksi Administrator</th>
+                                <th class="px-6 py-4 text-center">Aksi</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-slate-100 text-xs">
@@ -92,12 +92,7 @@ $result_users = mysqli_query($koneksi, $query_users);
 
                                     <td class="px-6 py-4 text-center">
                                         <div class="flex justify-center items-center gap-4 font-bold">
-                                            <a href="prosesKelolaUser.php?action=reset&id=<?= $u['id'] ?>" data-ajax-action="user" data-confirm="Reset password pengguna ini menjadi 123456?" class="text-sky-600 hover:underline">
-                                                Reset
-                                            </a>
-                                            
                                             <?php if ($u['id'] !== $_SESSION['user_id']) : ?>
-                                                <span class="text-slate-200">|</span>
                                                 <a href="prosesKelolaUser.php?action=role&id=<?= $u['id'] ?>" data-ajax-action="user" data-confirm="Ubah role pengguna ini?" class="text-amber-600 hover:underline">
                                                     Ubah Role
                                                 </a>
@@ -118,7 +113,6 @@ $result_users = mysqli_query($koneksi, $query_users);
                                                     Hapus
                                                 </a>
                                             <?php else : ?>
-                                                <span class="text-slate-200">|</span>
                                                 <span class="text-slate-400 font-normal italic">Anda</span>
                                             <?php endif; ?>
                                         </div>
